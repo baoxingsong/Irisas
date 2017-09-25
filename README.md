@@ -1,7 +1,7 @@
 # Introduction
 **Irisas** (Integrated region-based variants synchronization and Annotation for association studies)\
 This pipeline includes two modules:\
-    *synchronize INDEL and other variants for GWAS and other population genomics analysis.\
+    *synchronize INDEL and other variants for GWAS and population genomics analysis.\
     *generate variants tables of multiple variants integrating effect on ORF level for GWAS aim.
 ## Motivation
 ### INDEL
