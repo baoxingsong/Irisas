@@ -26,6 +26,7 @@ By integrating the effects of all variants in the gene region, we could predicat
 [Exonerate](http://www.ebi.ac.uk/about/vertebrate-genomics/software/exonerate)\
 [samtools](http://samtools.sourceforge.net/)\
 [PLINK](http://zzz.bwh.harvard.edu/plink/)
+
 # Install
 ````
 git clone https://github.com/baoxingsong/IOA.git
@@ -189,4 +190,4 @@ Alternative alignment affects around 40% INDELs on average for each _Arabidopsis
 After synchronizing genome-wide variants with this pipeline, a lot of population genetics analysis were observed. For GWAS analysis, as improved power was found with IOA. And for natural selection, we found there is statistics pattern difference after synchronization. With this idea, we also observed a special evolution path.
 \
 \
-**Irisas is designed and tested for inbred lines.**
+**Irisas is designed and tested for inbreeding lines.**
