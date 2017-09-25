@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. -->
+<project basedir="." default="build" name="Irisas">
+    <property environment="env"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.8"/>
+    <property name="source" value="1.8"/>
+    <path id="Maven Dependencies.libraryclasspath"/>
+    <path id="Irisas.classpath">
+        <pathelement location="bin/"/>
+        <pathelement location="src/lib/BigWig.jar"/>
+        <pathelement location="src/lib/commons-cli-1.4.jar"/>
+        <pathelement location="src/lib/commons-lang3-3.4.jar"/>
+        <pathelement location="src/lib/commons-math3-3.0.jar"/>
+        <pathelement location="src/lib/dom4j-1.6.1.jar"/>
+        <pathelement location="src/lib/hamcrest-core-1.1.0.jar"/>
+        <pathelement location="src/lib/jacocoant.jar"/>
+        <pathelement location="src/lib/java-genomics-io.jar"/>
+        <pathelement location="src/lib/junit.jar"/>
+        <pathelement location="src/lib/log4j-1.2.15.jar"/>
+        <pathelement location="src/lib/sam-1.67.jar"/>
+        <path refid="Maven Dependencies.libraryclasspath"/>
+    </path>
+              	
+  	<path id="libraries.path">    
+  	        <fileset dir="./src/lib">
+  	            <include name="*.jar"/>
+  	        </fileset>
+  	    </path>
+
+    <target name="init">
+        <mkdir dir="bin"/>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <include name="**/*.java"/>
+                <exclude name="**/*.launch"/>
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+    <target depends="clean" name="cleanall"/>
+    <target depends="build-subprojects,build-project" name="build"/>
+    <target name="build-subprojects"/>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+            <src path="src"/>
+            <include name="**/*.java"/>
+            <classpath refid="Irisas.classpath"/>
+        </javac>
+    	<mkdir dir="disk" />
+    	    <jar destfile="disk/Irisas.jar" >
+    	    	<manifest>
+	                <attribute name="Main-Class" value="org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader"/>
+	                <attribute name="Rsrc-Main-Class" value="Irisas"/>
+	                <attribute name="Class-Path" value="."/>
+	                <attribute name="Rsrc-Class-Path" value="./ BigWig.jar commons-cli-1.4.jar commons-lang3-3.4.jar commons-math3-3.0.jar dom4j-1.6.1.jar hamcrest-core-1.1.0.jar jacocoant.jar java-genomics-io.jar junit.jar log4j-1.2.15.jar sam-1.67.jar"/>
+	            </manifest>
+    	    	<zipfileset src="jar-in-jar-loader.zip"/>
+    	    	<fileset dir="bin"/>
+    	    	<zipfileset dir="src/lib" includes="BigWig.jar"/>
+	            <zipfileset dir="src/lib" includes="commons-cli-1.4.jar"/>
+	            <zipfileset dir="src/lib" includes="commons-lang3-3.4.jar"/>
+	            <zipfileset dir="src/lib" includes="commons-math3-3.0.jar"/>
+	            <zipfileset dir="src/lib" includes="dom4j-1.6.1.jar"/>
+	            <zipfileset dir="src/lib" includes="hamcrest-core-1.1.0.jar"/>
+	            <zipfileset dir="src/lib" includes="jacocoant.jar"/>
+	            <zipfileset dir="src/lib" includes="java-genomics-io.jar"/>
+	            <zipfileset dir="src/lib" includes="junit.jar"/>
+	            <zipfileset dir="src/lib" includes="log4j-1.2.15.jar"/>
+	            <zipfileset dir="src/lib" includes="sam-1.67.jar"/>
+    	    </jar>
+    </target>
+</project>
