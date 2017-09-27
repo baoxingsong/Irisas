@@ -352,8 +352,21 @@ class SdiSnpToPedMultipleThread extends Thread{
 								markerPostionHashMap.put(markerPostion, 'N');
 							}
 						}else{
-							markerPostionHashMap.put(markerPostion, 'N');
+							markerPostionHashMap.put(markerPostion, 'N'); // low coverage
 						}				
+					}
+					if( mapSingleRecords.size() == 0 ){
+						boolean thisTranscriptIsReliable = true;
+						Contig result = wig.query(key, markerPostion.getPosition(), markerPostion.getPosition());
+						double thisMean = result.mean();
+						if(  Double.isNaN(thisMean) || thisMean<2 ){
+							thisTranscriptIsReliable = false;
+						}
+						if( thisTranscriptIsReliable ){
+
+						}else{
+							markerPostionHashMap.put(markerPostion, 'N'); // low coverage
+						}
 					}
 				}
 			}
