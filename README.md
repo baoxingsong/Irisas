@@ -28,6 +28,7 @@ By integrating the effects of all variants in the gene region, we could predicat
 [PLINK](http://zzz.bwh.harvard.edu/plink/)
 
 # Install
+Make sure you have [JDK>=1.8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) and [ant](http://ant.apache.org/) installed on your computer.
 ````
 git clone https://github.com/baoxingsong/IOA.git
 cd IOA
