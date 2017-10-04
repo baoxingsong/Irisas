@@ -197,7 +197,7 @@ After synchronizing genome-wide variants with this pipeline, a lot of population
 \
 **Irisas is designed and tested for inbreeding lines.**
 
-# TODO
+### TODO
 1) Adapt Irisas for out-breeding lines analysis
 2) When adding new individuals, don't need to rerun the pipeline from very begin
 
