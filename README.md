@@ -199,5 +199,5 @@ After synchronizing genome-wide variants with this pipeline, a lot of population
 
 ### TODO
 1) Adapt Irisas for out-breeding lines analysis
-2) When adding new individuals, don't rerun the pipeline from very begin
+2) When adding new individuals, don't rerun the pipeline from very begin and assign each snp or INDEL a fixed ID
 3) The ORF-state is a really initial exploring, better measurement could be proposed.
