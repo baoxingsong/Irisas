@@ -19,6 +19,10 @@ By integrating the effects of all variants in the gene region, we could predicat
 <img src="./doc/ORF.jpg" width="600px" background-color="#ffffff" />
 </p>
 
+### Everything and Anything
+You could go to our [wiki page](https://github.com/baoxingsong/Irisas/wiki) for more details about the underlying algorithm.
+
+
 # Dependency
 [imrdenom](http://chi.mpipz.mpg.de/download/imrdenom/)\
 [wigToBigWig](https://genome.ucsc.edu/goldenpath/help/bigWig.html)\
