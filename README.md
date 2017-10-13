@@ -34,8 +34,8 @@ You could go to our [wiki page](https://github.com/baoxingsong/Irisas/wiki) for 
 # Install
 Make sure you have [JDK>=1.8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) and [ant](http://ant.apache.org/) installed on your computer.
 ````
-git clone https://github.com/baoxingsong/IOA.git
-cd IOA
+git clone https://github.com/baoxingsong/Irisas.git
+cd Irisas
 ant
 ````
 You will get `Irisas.jar` under folder `dist`
