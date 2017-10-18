@@ -18,6 +18,7 @@ import me.songbx.model.Transcript.TranscriptLiftStartEndSequenceAasequenceIndel;
 import me.songbx.util.StandardGeneticCode;
 import me.songbx.util.exception.codingNotFound;
 import me.songbx.util.exception.codingNotThree;
+import sun.misc.GC;
 
 /**
  * the sranscriptLiftStartEndSequenceAasequenceIndels in every collectors are
@@ -538,7 +539,6 @@ public class AnnotationReadIncludeOrfLostService {
 	private synchronized boolean ifSpliceSitesOk(
 			TranscriptLiftStartEndSequenceAasequenceIndel t2,
 			String chromeSomeName) {
-		boolean ifSelectTaur10 = true;
 		for (int iiii = 1; iiii < t2.getCdsLiftSequenceArrayList().size(); iiii++) {
 			int le;
 			int ts;
@@ -595,21 +595,61 @@ public class AnnotationReadIncludeOrfLostService {
 
 			// System.err.println("gt:s1t:"+s1t);
 			// System.err.println("ag:s2t:"+s2t);
+			ArrayList<String> donors = new ArrayList<String>();
+			ArrayList<String> acceptors = new ArrayList<String>();
+
+			donors.add("GT"); acceptors.add("AG");
+			donors.add("GC"); acceptors.add("AG");
+			donors.add("CT"); acceptors.add("AG");
+			donors.add("GG"); acceptors.add("AG");
+			donors.add("GA"); acceptors.add("AG");
+			donors.add("CA"); acceptors.add("AG");
+			donors.add("GT"); acceptors.add("CG");
+			donors.add("GT"); acceptors.add("GG");
+			donors.add("TG"); acceptors.add("AG");
+			donors.add("GT"); acceptors.add("TG");
+			donors.add("AT"); acceptors.add("AG");
+			donors.add("TC"); acceptors.add("AG");
+			donors.add("GT"); acceptors.add("AC");
+			donors.add("CC"); acceptors.add("AG");
+			donors.add("TT"); acceptors.add("AG");
+			donors.add("GT"); acceptors.add("AA");
+			donors.add("AA"); acceptors.add("AG");
+			donors.add("GT"); acceptors.add("AT");
+			donors.add("GT"); acceptors.add("GC");
+			donors.add("AC"); acceptors.add("AG");
+			donors.add("AG"); acceptors.add("AG");
+			donors.add("CT"); acceptors.add("AT");
+			donors.add("GT"); acceptors.add("CC");
+			donors.add("GA"); acceptors.add("CT");
+			donors.add("GT"); acceptors.add("CT");
+			donors.add("GT"); acceptors.add("GA");
+			donors.add("CC"); acceptors.add("GC");
+			donors.add("GG"); acceptors.add("GT");
+			donors.add("GT"); acceptors.add("GT");
+			donors.add("GT"); acceptors.add("TC");
+			donors.add("CT"); acceptors.add("TT");
+			donors.add("GT"); acceptors.add("TT");
+			for( int di = 0; di<donors.size(); ++di ){
+				if( donors.get(di).equals(s1t) && acceptors.get(di).equals(s2t) ){
+					return true;
+				}
+			}
 			if ( (( "GT".equals(s1t) || "GC".equals(s1t) || "CT".equals(s1t)  || "GG".equals(s1t)) && "AG".equals(s2t)) || ("GT".equals(s1t) && ("CG".equals(s2t) || "TG".equals(s2t))) ) {
-				// System.err.println("111");
+				return true;
 			} else {
 				// System.err.println("222");
 				if (!s1t.equals(s1)) {
-					ifSelectTaur10 = false;
+					return false;
 					// System.err.println("333");
 				}
 				if (!s2t.equals(s2)) {
-					ifSelectTaur10 = false;
+					return false;
 					// System.err.println("444");
 				}
 			}
 		}
-		return ifSelectTaur10;
+		return true;
 	}
 
 	private synchronized String agIUPACcodesTranslation(String ag) {

@@ -355,6 +355,7 @@ class SdiSnpToPedMultipleThread extends Thread{
 							markerPostionHashMap.put(markerPostion, 'N'); // low coverage
 						}				
 					}
+					// this is added after generating public result begin
 					if( mapSingleRecords.size() == 0 ){
 						boolean thisTranscriptIsReliable = true;
 						Contig result = wig.query(key, markerPostion.getPosition(), markerPostion.getPosition());
@@ -367,7 +368,7 @@ class SdiSnpToPedMultipleThread extends Thread{
 						}else{
 							markerPostionHashMap.put(markerPostion, 'N'); // low coverage
 						}
-					}
+					}// this is added after generating public result end
 				}
 			}
 		} catch (WigFileFormatException | IOException | WigFileException e) {
