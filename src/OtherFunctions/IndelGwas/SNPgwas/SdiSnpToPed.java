@@ -334,29 +334,29 @@ class SdiSnpToPedMultipleThread extends Thread{
 			for( String key : markerPostionsMap.keySet() ){	
 				for( MarkerPostion markerPostion : markerPostionsMap.get(key).getMarkerPostions() ){
 					HashSet<MapSingleRecord> mapSingleRecords = mapFileImpl.getOverLapRecordsByBasing( markerPostion.getChrName(), markerPostion.getPosition() );
-					for( MapSingleRecord mapSingleRecord : mapSingleRecords ){
-						boolean thisTranscriptIsReliable = true;
-						Contig result = wig.query(key, markerPostion.getPosition(), markerPostion.getPosition());
-						double thisMean = result.mean();
-						if(  Double.isNaN(thisMean) || thisMean<2 ){
-		            		thisTranscriptIsReliable = false;
-		            	}
-						if( thisTranscriptIsReliable ){
-							if( mapSingleRecord.getBasement() == markerPostion.getPosition() && mapSingleRecord.getChanged()==0 && mapSingleRecord.getOriginal().length()==1 && !mapSingleRecord.getOriginal().contains("-") && mapSingleRecord.getResult().length()==1 ){
-								markerPostionHashMap.put(markerPostion, mapSingleRecord.getResult().toUpperCase().charAt(0));
-							} else if ( mapSingleRecord.getBasement() <= markerPostion.getPosition() && mapSingleRecord.getChanged()>0 && mapSingleRecord.getOriginal().contains("-") ){
-								
-							} else if ( mapSingleRecord.getBasement() <= markerPostion.getPosition() && mapSingleRecord.getChanged() < 0 && (mapSingleRecord.getBasement()+Math.abs(mapSingleRecord.getChanged())-1) >= markerPostion.getPosition() && mapSingleRecord.getResult().contains("-") ){
-								markerPostionHashMap.put(markerPostion, '-');
-							} else if ( mapSingleRecord.getBasement() <= markerPostion.getPosition() && (mapSingleRecord.getBasement() + mapSingleRecord.getOriginal().length()) > markerPostion.getPosition() ) {
-								markerPostionHashMap.put(markerPostion, 'N');
+					if( mapSingleRecords.size() > 0 ){
+						for( MapSingleRecord mapSingleRecord : mapSingleRecords ){
+							boolean thisTranscriptIsReliable = true;
+							Contig result = wig.query(key, markerPostion.getPosition(), markerPostion.getPosition());
+							double thisMean = result.mean();
+							if(  Double.isNaN(thisMean) || thisMean<2 ){
+								thisTranscriptIsReliable = false;
 							}
-						}else{
-							markerPostionHashMap.put(markerPostion, 'N'); // low coverage
-						}				
-					}
-					// this is added after generating public result begin
-					if( mapSingleRecords.size() == 0 ){
+							if( thisTranscriptIsReliable ){
+								if( mapSingleRecord.getBasement() == markerPostion.getPosition() && mapSingleRecord.getChanged()==0 && mapSingleRecord.getOriginal().length()==1 && !mapSingleRecord.getOriginal().contains("-") && mapSingleRecord.getResult().length()==1 ){
+									markerPostionHashMap.put(markerPostion, mapSingleRecord.getResult().toUpperCase().charAt(0));
+								} else if ( mapSingleRecord.getBasement() <= markerPostion.getPosition() && mapSingleRecord.getChanged()>0 && mapSingleRecord.getOriginal().contains("-") ){
+
+								} else if ( mapSingleRecord.getBasement() <= markerPostion.getPosition() && mapSingleRecord.getChanged() < 0 && (mapSingleRecord.getBasement()+Math.abs(mapSingleRecord.getChanged())-1) >= markerPostion.getPosition() && mapSingleRecord.getResult().contains("-") ){
+									markerPostionHashMap.put(markerPostion, '-');
+								} else if ( mapSingleRecord.getBasement() <= markerPostion.getPosition() && (mapSingleRecord.getBasement() + mapSingleRecord.getOriginal().length()) > markerPostion.getPosition() ) {
+									markerPostionHashMap.put(markerPostion, 'N');
+								}
+							}else{
+								markerPostionHashMap.put(markerPostion, 'N'); // low coverage
+							}
+						}
+					}else{ // this is added after generating public result begin
 						boolean thisTranscriptIsReliable = true;
 						Contig result = wig.query(key, markerPostion.getPosition(), markerPostion.getPosition());
 						double thisMean = result.mean();

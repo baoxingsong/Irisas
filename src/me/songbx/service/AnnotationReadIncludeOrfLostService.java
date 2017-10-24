@@ -18,7 +18,6 @@ import me.songbx.model.Transcript.TranscriptLiftStartEndSequenceAasequenceIndel;
 import me.songbx.util.StandardGeneticCode;
 import me.songbx.util.exception.codingNotFound;
 import me.songbx.util.exception.codingNotThree;
-import sun.misc.GC;
 
 /**
  * the sranscriptLiftStartEndSequenceAasequenceIndels in every collectors are
