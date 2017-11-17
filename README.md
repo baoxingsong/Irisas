@@ -1,5 +1,5 @@
 # Introduction
-**Irisas** (Integrated region-based variants synchronization and Annotation for association studies)\
+**Irisas** (Integrated region-based variant synchronization and Annotation for association studies)\
 This pipeline includes two modules:\
     *synchronize INDEL and other variants for GWAS and population genomics analysis.\
     *generate variants tables of multiple variants integrating effect on ORF level for GWAS aim.
@@ -41,13 +41,13 @@ ant
 You will get `Irisas.jar` under folder `dist`
 
 # Run
-There are two main modules in this packages. INDEL and other variants synchronization and integrating effects.
+There are two main modules in this packages. INDEL and other variant synchronization and integrating effects.
 ````
 java -jar Irisas.jar
 
 Commands:
 
-  -- Functions for whole genome wide variants synchronization
+  -- Functions for whole genome wide variant synchronization
 
      CutTheWholeGenomeWithWindow     cut the whole genome sequence with a window
      NewSdiFromMsa                   generate sdi files from MSA results
