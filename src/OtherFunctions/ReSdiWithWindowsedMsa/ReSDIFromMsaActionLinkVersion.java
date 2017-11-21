@@ -515,7 +515,45 @@ public class ReSDIFromMsaActionLinkVersion {
 								currOne.setLast(null);
 								currOne.setNext(null);
 								currOne=nextOne;
-							}else{
+							}
+
+							else if ( currOne.getMapSingleRecord().getChanged()<0 && lastOne.getMapSingleRecord().getChanged()>0
+									&& currOne.getMapSingleRecord().getOriginal().compareTo(lastOne.getMapSingleRecord().getResult())==0 &&
+									currOne.getMapSingleRecord().getBasement() == lastOne.getMapSingleRecord().getBasement()){ //delete one insertion and next reverse sence deletion
+								//delete current one and prev
+								if( ((currOne.getLast())).equals (sdiRecords.get(chrName).getFirst()) ){
+									try{
+										sdiRecords.get(chrName).deleteFirst();
+										sdiRecords.get(chrName).deleteFirst();
+									} catch (Exception e) {
+										e.printStackTrace();
+									}
+								}else{
+									currOne.getLast().getLast().setNext(currOne.getNext());
+									currOne.getNext().setLast(currOne.getLast().getLast());
+									Data temp = currOne.getNext();
+									currOne = temp;
+									lastOne = temp.getLast();
+								}
+							} else if ( currOne.getMapSingleRecord().getChanged()>0 && lastOne.getMapSingleRecord().getChanged()<0
+									&& currOne.getMapSingleRecord().getResult().compareTo(lastOne.getMapSingleRecord().getOriginal())==0 &&
+									currOne.getMapSingleRecord().getBasement() == lastOne.getMapSingleRecord().getBasement()){
+								//delete current one and prev
+								if( ((currOne.getLast())) == (sdiRecords.get(chrName).getFirst()) ){
+									try{
+										sdiRecords.get(chrName).deleteFirst();
+										sdiRecords.get(chrName).deleteFirst();
+									} catch (Exception e) {
+										e.printStackTrace();
+									}
+								}else{
+									currOne.getLast().getLast().setNext(currOne.getNext());
+									currOne.getNext().setLast(currOne.getLast().getLast());
+									Data temp = currOne.getNext();
+									currOne = temp;
+									lastOne = temp.getLast();
+								}
+							} else{
 								lastOne=currOne;
 								currOne=nextOne;
 							}
@@ -590,7 +628,7 @@ public class ReSDIFromMsaActionLinkVersion {
 }
 
 class FirstLastList {
-	class Data{
+	public class Data{
 		private MapSingleRecord mapSingleRecord;
 		private Data next = null;
 		private Data last = null;
@@ -616,6 +654,7 @@ class FirstLastList {
 			this.mapSingleRecord=mapSingleRecord;
 		}
 	}
+
     private Data first = null;  
     private Data last = null;  
       
@@ -643,17 +682,17 @@ class FirstLastList {
           if(first == null)  
              throw new Exception("empty");  
           Data temp = first;  
-          if(first.next == null)  
+          if(first.next == null)
              last = null;
           first.next.last=null;
-          first = first.next;  
-          return temp.mapSingleRecord;  
+          first = first.next;
+          return temp.mapSingleRecord;
    }     
       
     public void deleteLast() throws Exception{  
         if(first == null)  
             throw new Exception("empty");  
-        if(first.next == null){  
+        if(first.next == null){
             first = null;  
             last = null;  
         }else{
