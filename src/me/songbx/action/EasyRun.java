@@ -42,7 +42,7 @@ public class EasyRun {
         StringBuffer helpMessage=new StringBuffer("run the whole pipeline with one command\nE-mail:song@mpipz.mpg.de\nArguments:\n");
         helpMessage.append("  -t   [integer] thread number. (Default 5)\n");
         helpMessage.append("  -w   [integer] window size.  (Default 10000)\n");
-        helpMessage.append("  -v   [integer] overlap size between two neighbour window (Default 500)\n");
+        helpMessage.append("  -v   [integer] extend size between two neighbour windows (Default 500)\n");
         helpMessage.append("  -r   name of reference accession/line\n");
         helpMessage.append("  -l   list of accession names\n");
         helpMessage.append("  -g   the folder where the genome sequences and sdi files are located\n");

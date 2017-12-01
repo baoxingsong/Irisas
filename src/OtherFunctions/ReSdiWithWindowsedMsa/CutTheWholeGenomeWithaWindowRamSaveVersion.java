@@ -58,7 +58,7 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 		StringBuffer helpMessage=new StringBuffer("INDEL synchronization pipeline\nE-mail:song@mpipz.mpg.de\nArguments:\n");
         helpMessage.append("  -t   [integer] thread number. (Default 5)\n");
         helpMessage.append("  -w   [integer] window size.  (Default 10000)\n");
-        helpMessage.append("  -v   [integer] overlap size between two neighbour window (Default 500)\n");
+        helpMessage.append("  -v   [integer] extend size between two neighbour windows (Default 500)\n");
         helpMessage.append("  -o   output folder\n");
         helpMessage.append("  -r   name of reference accession/line\n");
         helpMessage.append("  -l   list of accession names\n");

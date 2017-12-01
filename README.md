@@ -70,14 +70,15 @@ java -Xmx50g -jar Irisas.jar EasyRun
 
   -t   [integer] thread number. (Default 5)
   -w   [integer] window size.  (Default 10000)
-  -v   [integer] overlap size between two neighbour window (Default 500)
+  -v   [integer] overlap size between two neighbour windows (Default 500)
   -r   name of reference accession/line
   -l   list of accession names
   -g   the folder where the genome sequences and sdi files are located
   -n   [integer] number of accession to process for each batch, should be larger than thread number (Default 50)
   -a   reference gene structure annotation in GFF/GTF format
-  -i   [integer] extend interval (Default 1000)
+  -i   [integer] extend interval (Default 500)
 ````
+*The overlap size between neighbour windows is twice the parameter -v
 ## Run the pipeline step by step
 ### For variant synchronization
 #### preparation

@@ -62,7 +62,7 @@ public class AnnotationReadIncludeOrfLostService {
 	public synchronized void updateInformation(boolean wantmRnaSequence,
 			boolean wantFullCNDnaSequence, boolean wantCdsList,
 			boolean wantSnpMapfilerecords, boolean wantIndelMapfilerecords,
-			boolean wantIndelMapfilerecordsSeq) {
+			boolean wantIndelMapfilerecordsSeq/*, int minIntron*/) {
 		ArrayList<TranscriptLiftStartEndSequenceAasequenceIndel> temptranscriptArrayList = new ArrayList<TranscriptLiftStartEndSequenceAasequenceIndel>();
 		HashMap<String, HashSet<Transcript>> sstranscriptHashSet = annotationReadImpl
 				.getTranscriptHashSet();
@@ -104,34 +104,39 @@ public class AnnotationReadIncludeOrfLostService {
 				metaInformation += "_spliceSitesConserved";
 				String cdsSequenceString = transcriptLiftStartEndSequenceAasequenceIndel
 						.getSequence();
-				if (cdsSequenceString.length() < 3) {
-					metaInformation += "_exonLengthLessThan3";
-				} else {
-					metaInformation += "_exonLengthMoreThan3";
-					if (ifLengthCouldbeDivedBYThree(cdsSequenceString)) {
-						metaInformation += "_exonLengthIsMultipleOf3";
-						if (ifNewStopCOde(cdsSequenceString)) {
-							metaInformation += "_premutareStopCodon";
-						} else {
-							metaInformation += "_noPrematureStopCodon";
-							if (ifEndWithStopCode(cdsSequenceString)) {
-								metaInformation += "_endWithStopCodon";
-								if (ifStartWithStartCode(cdsSequenceString)) {
-									metaInformation += "_startWithStartCodon_ConservedFunction";
-									orfLOst = false;
-								} else {
-									metaInformation += "_notWithStartCodon";
-								}
-							} else {
-								metaInformation += "_notEndWithStopCodon";
-							}
-						}
+				//if( ifIntronEnoughLarge(transcriptLiftStartEndSequenceAasequenceIndel, minIntron) ){
+				//	metaInformation = "_intronsLargeEnough";
+					if (cdsSequenceString.length() < 3) {
+						metaInformation += "_exonLengthLessThan3";
 					} else {
-						metaInformation += "_exonLengthIsNotMultipleOf3";
+						metaInformation += "_exonLengthMoreThan3";
+						if (ifLengthCouldbeDivedBYThree(cdsSequenceString)) {
+							metaInformation += "_exonLengthIsMultipleOf3";
+							if (ifNewStopCOde(cdsSequenceString)) {
+								metaInformation += "_premutareStopCodon";
+							} else {
+								metaInformation += "_noPrematureStopCodon";
+								if (ifEndWithStopCode(cdsSequenceString)) {
+									metaInformation += "_endWithStopCodon";
+									if (ifStartWithStartCode(cdsSequenceString)) {
+										metaInformation += "_startWithStartCodon_ConservedFunction";
+										orfLOst = false;
+									} else {
+										metaInformation += "_notWithStartCodon";
+									}
+								} else {
+									metaInformation += "_notEndWithStopCodon";
+								}
+							}
+						} else {
+							metaInformation += "_exonLengthIsNotMultipleOf3";
+						}
 					}
-				}
+//				}else {
+//					metaInformation += "_exonLengthIsNotMultipleOf3";
+//				}
 			} else {
-				metaInformation = "_spliceSitesDestroyed";
+				metaInformation = "_intronsNotLargeEnough";
 			}
 
 			metaInformation += "_col"
@@ -531,6 +536,25 @@ public class AnnotationReadIncludeOrfLostService {
 			// e.printStackTrace();
 		} catch (codingNotFound e) {
 			// e.printStackTrace();
+		}
+		return true;
+	}
+
+	private synchronized boolean ifIntronEnoughLarge( TranscriptLiftStartEndSequenceAasequenceIndel t2, int minIntron ){
+		for (int iiii = 1; iiii < t2.getCdsLiftSequenceArrayList().size(); iiii++) {
+			if (t2.getStrand() == Strand.POSITIVE) {
+				int le = t2.getCdsLiftSequenceArrayList().get(iiii - 1).getEnd();
+				int ts = t2.getCdsLiftSequenceArrayList().get(iiii).getStart();
+				if( (ts - le - 1) < minIntron ){
+					return false;
+				}
+			}else{
+				int ts = t2.getCdsLiftSequenceArrayList().get(iiii - 1).getStart();
+				int le = t2.getCdsLiftSequenceArrayList().get(iiii).getEnd();
+				if( (le - ts - 1) < minIntron ){
+					return false;
+				}
+			}
 		}
 		return true;
 	}

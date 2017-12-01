@@ -471,94 +471,101 @@ public class ReSDIFromMsaActionLinkVersion {
 //						System.out.println("should never run here");
 					}
 					//System.out.println(name + ": link data structure start");
-					if( sdiRecords.get(chrName).getFirst()!=null && sdiRecords.get(chrName).getFirst().getNext()!=null ){
-						Data lastOne = sdiRecords.get(chrName).getFirst();
-						Data currOne = sdiRecords.get(chrName).getFirst().getNext();
-						
-						while( null != currOne){
-							//System.out.println(name + ": link data structure " + currOne.getMapSingleRecord().getBasement());
-							Data nextOne = currOne.getNext();
-							if(currOne.getMapSingleRecord().getChanged()<0 && lastOne.getMapSingleRecord().getChanged()<0 &&
-									(lastOne.getMapSingleRecord().getBasement()+Math.abs(lastOne.getMapSingleRecord().getChanged()))==currOne.getMapSingleRecord().getBasement()
-									&& lastOne.getMapSingleRecord().getResult().equals("-") && currOne.getMapSingleRecord().getResult().equals("-")){
-								MapSingleRecord mapSingleRecord2 = new MapSingleRecord(lastOne.getMapSingleRecord().getBasement(), lastOne.getMapSingleRecord().getChanged()+currOne.getMapSingleRecord().getChanged(),
-										lastOne.getMapSingleRecord().getOriginal()+currOne.getMapSingleRecord().getOriginal(), "-");
-								//delete last one begin
-								if( currOne.getLast().equals(sdiRecords.get(chrName).getFirst()) ){
-									try {
-										sdiRecords.get(chrName).deleteFirst();
-									} catch (Exception e) {
-										e.printStackTrace();
-									}
-								}else{
-									lastOne.getLast().setNext(currOne);
-									currOne.setLast(lastOne.getLast());
-									lastOne.setLast(null);
-									lastOne.setNext(null);
-									lastOne=currOne.getLast();
-								}
-								//delete last one end
-								currOne.setMapSingleRecord(mapSingleRecord2);
-								lastOne=currOne;
-								currOne=nextOne;
-							}else if(currOne.getMapSingleRecord().getChanged()==0 && currOne.getMapSingleRecord().getOriginal().endsWith("-") && currOne.getMapSingleRecord().getResult().equals("-")){
-								//delete current one
-								lastOne.setNext(currOne.getNext());
-								currOne.getNext().setLast(lastOne);
-								currOne.setLast(null);
-								currOne.setNext(null);
-								currOne=nextOne;
-							}else if(currOne.getMapSingleRecord().getChanged()==0 && currOne.getMapSingleRecord().getOriginal().equalsIgnoreCase( currOne.getMapSingleRecord().getResult())){
-								//delete current one
-								lastOne.setNext(currOne.getNext());
-								currOne.getNext().setLast(lastOne);
-								currOne.setLast(null);
-								currOne.setNext(null);
-								currOne=nextOne;
-							}
+					for( int runingCound = 0; runingCound<2; ++runingCound) { // run here for twice, it is better for check the neighbouring unnecessary records
+						if (sdiRecords.get(chrName).getFirst() != null && sdiRecords.get(chrName).getFirst().getNext() != null) {
+							Data lastOne = sdiRecords.get(chrName).getFirst();
+							Data currOne = sdiRecords.get(chrName).getFirst().getNext();
 
-							else if ( currOne.getMapSingleRecord().getChanged()<0 && lastOne.getMapSingleRecord().getChanged()>0
-									&& currOne.getMapSingleRecord().getOriginal().compareTo(lastOne.getMapSingleRecord().getResult())==0 &&
-									currOne.getMapSingleRecord().getBasement() == lastOne.getMapSingleRecord().getBasement()){ //delete one insertion and next reverse sence deletion
-								//delete current one and prev
-								if( ((currOne.getLast())).equals (sdiRecords.get(chrName).getFirst()) ){
-									try{
-										sdiRecords.get(chrName).deleteFirst();
-										sdiRecords.get(chrName).deleteFirst();
-									} catch (Exception e) {
-										e.printStackTrace();
+							while (null != currOne) {
+								//System.out.println(name + ": link data structure " + currOne.getMapSingleRecord().getBasement());
+								Data nextOne = currOne.getNext();
+								if (currOne.getMapSingleRecord().getChanged() < 0 && lastOne.getMapSingleRecord().getChanged() < 0 &&
+										(lastOne.getMapSingleRecord().getBasement() + Math.abs(lastOne.getMapSingleRecord().getChanged())) == currOne.getMapSingleRecord().getBasement()
+										&& lastOne.getMapSingleRecord().getResult().equals("-") && currOne.getMapSingleRecord().getResult().equals("-")) {
+									MapSingleRecord mapSingleRecord2 = new MapSingleRecord(lastOne.getMapSingleRecord().getBasement(), lastOne.getMapSingleRecord().getChanged() + currOne.getMapSingleRecord().getChanged(),
+											lastOne.getMapSingleRecord().getOriginal() + currOne.getMapSingleRecord().getOriginal(), "-");
+									//delete last one begin
+									if (currOne.getLast().equals(sdiRecords.get(chrName).getFirst())) {
+										try {
+											sdiRecords.get(chrName).deleteFirst();
+										} catch (Exception e) {
+											e.printStackTrace();
+										}
+									} else {
+										lastOne.getLast().setNext(currOne);
+										currOne.setLast(lastOne.getLast());
+										lastOne.setLast(null);
+										lastOne.setNext(null);
+										lastOne = currOne.getLast();
 									}
-								}else{
-									currOne.getLast().getLast().setNext(currOne.getNext());
-									currOne.getNext().setLast(currOne.getLast().getLast());
-									Data temp = currOne.getNext();
-									currOne = temp;
-									lastOne = temp.getLast();
-								}
-							} else if ( currOne.getMapSingleRecord().getChanged()>0 && lastOne.getMapSingleRecord().getChanged()<0
-									&& currOne.getMapSingleRecord().getResult().compareTo(lastOne.getMapSingleRecord().getOriginal())==0 &&
-									currOne.getMapSingleRecord().getBasement() == lastOne.getMapSingleRecord().getBasement()){
-								//delete current one and prev
-								if( ((currOne.getLast())) == (sdiRecords.get(chrName).getFirst()) ){
-									try{
-										sdiRecords.get(chrName).deleteFirst();
-										sdiRecords.get(chrName).deleteFirst();
-									} catch (Exception e) {
-										e.printStackTrace();
+									//delete last one end
+									currOne.setMapSingleRecord(mapSingleRecord2);
+									lastOne = currOne;
+									currOne = nextOne;
+								} else if (currOne.getMapSingleRecord().getChanged() == 0 && currOne.getMapSingleRecord().getOriginal().endsWith("-") && currOne.getMapSingleRecord().getResult().equals("-")) {
+									//delete current one
+									lastOne.setNext(currOne.getNext());
+									currOne.getNext().setLast(lastOne);
+									currOne.setLast(null);
+									currOne.setNext(null);
+									currOne = nextOne;
+								} else if (currOne.getMapSingleRecord().getChanged() == 0 && currOne.getMapSingleRecord().getOriginal().equalsIgnoreCase(currOne.getMapSingleRecord().getResult())) {
+									//delete current one
+									lastOne.setNext(currOne.getNext());
+									currOne.getNext().setLast(lastOne);
+									currOne.setLast(null);
+									currOne.setNext(null);
+									currOne = nextOne;
+								} else if (currOne.getMapSingleRecord().getChanged() < 0 && lastOne.getMapSingleRecord().getChanged() > 0
+										&& currOne.getMapSingleRecord().getOriginal().compareTo(lastOne.getMapSingleRecord().getResult()) == 0 &&
+										currOne.getMapSingleRecord().getBasement() == lastOne.getMapSingleRecord().getBasement()) { //delete one insertion and next reverse sence deletion
+									//delete current one and prev
+									if (((currOne.getLast())).equals(sdiRecords.get(chrName).getFirst())) {
+										try {
+											sdiRecords.get(chrName).deleteFirst();
+											sdiRecords.get(chrName).deleteFirst();
+											lastOne = sdiRecords.get(chrName).getFirst();
+											currOne = sdiRecords.get(chrName).getFirst().getNext();
+										} catch (Exception e) {
+											e.printStackTrace();
+										}
+									} else {
+										currOne.getLast().getLast().setNext(currOne.getNext());
+										currOne.getNext().setLast(currOne.getLast().getLast());
+										Data temp = currOne.getNext();
+										currOne = temp;
+										lastOne = temp.getLast();
 									}
-								}else{
-									currOne.getLast().getLast().setNext(currOne.getNext());
-									currOne.getNext().setLast(currOne.getLast().getLast());
-									Data temp = currOne.getNext();
-									currOne = temp;
-									lastOne = temp.getLast();
+								} else if (currOne.getMapSingleRecord().getChanged() > 0 && lastOne.getMapSingleRecord().getChanged() < 0
+										&& currOne.getMapSingleRecord().getResult().compareTo(lastOne.getMapSingleRecord().getOriginal()) == 0 &&
+										(currOne.getMapSingleRecord().getBasement()-1) == lastOne.getMapSingleRecord().getBasement()) {
+									//delete current one and prev
+									if (((currOne.getLast())) == (sdiRecords.get(chrName).getFirst())) {
+										try {
+
+											sdiRecords.get(chrName).deleteFirst();
+											sdiRecords.get(chrName).deleteFirst();
+											lastOne = sdiRecords.get(chrName).getFirst();
+											currOne = sdiRecords.get(chrName).getFirst().getNext();
+
+										} catch (Exception e) {
+											e.printStackTrace();
+										}
+									} else {
+										currOne.getLast().getLast().setNext(currOne.getNext());
+										currOne.getNext().setLast(currOne.getLast().getLast());
+										Data temp = currOne.getNext();
+										currOne = temp;
+										lastOne = temp.getLast();
+									}
+								} else {
+									lastOne = currOne;
+									currOne = nextOne;
 								}
-							} else{
-								lastOne=currOne;
-								currOne=nextOne;
 							}
 						}
 					}
+
 					//System.out.println(name + ": link data structure end");
 					ArrayList<MapSingleRecord> sdiRecordsThisOne = new ArrayList<MapSingleRecord>();
 					if(sdiRecords.get(chrName).getFirst() != null){
