@@ -286,7 +286,7 @@ public class SdiSnpToPed{
 			}else if( theChar == 'C' ){
 				outPut.print("	C C");
 			}else{
-				outPut.print("	-9 -9");
+				outPut.print("	0 0");
 			}
 		}
 		outPut.print("\n");

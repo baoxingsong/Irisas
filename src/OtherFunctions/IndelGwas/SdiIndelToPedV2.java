@@ -282,7 +282,7 @@ public class SdiIndelToPedV2 {
 								if( overlaped==0 ){
 									content.append("  1 1"); // not indeled
 								}else{
-									content.append("  -9 -9");//overlaped
+									content.append("  0 0");//overlaped
 								}
 							}
 						}else{
