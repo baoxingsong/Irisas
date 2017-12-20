@@ -273,7 +273,7 @@ public class SdiSnpToPed{
 			}
 			outPut.print("\n");
 		}
-		outPut.print("genome" + " " + "genome" + " 0 0 1	1");
+		outPut.print("ref" + " " + "ref" + " 0 0 1	1");
 		for( int i =0; i < markerPostionAs.size(); i++ ){
 			MarkerPostion markerPostion = markerPostionAs.get(i);
 			char theChar = markerPostion.getColNaChar();
