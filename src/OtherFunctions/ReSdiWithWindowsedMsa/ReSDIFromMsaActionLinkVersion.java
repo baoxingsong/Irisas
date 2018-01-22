@@ -484,6 +484,7 @@ public class ReSDIFromMsaActionLinkVersion {
 										&& lastOne.getMapSingleRecord().getResult().equals("-") && currOne.getMapSingleRecord().getResult().equals("-")) {
 									MapSingleRecord mapSingleRecord2 = new MapSingleRecord(lastOne.getMapSingleRecord().getBasement(), lastOne.getMapSingleRecord().getChanged() + currOne.getMapSingleRecord().getChanged(),
 											lastOne.getMapSingleRecord().getOriginal() + currOne.getMapSingleRecord().getOriginal(), "-");
+									// merge to deletions
 									//delete last one begin
 									if (currOne.getLast().equals(sdiRecords.get(chrName).getFirst())) {
 										try {
@@ -504,6 +505,7 @@ public class ReSDIFromMsaActionLinkVersion {
 									currOne = nextOne;
 								} else if (currOne.getMapSingleRecord().getChanged() == 0 && currOne.getMapSingleRecord().getOriginal().endsWith("-") && currOne.getMapSingleRecord().getResult().equals("-")) {
 									//delete current one
+									// delete records that gives not information
 									lastOne.setNext(currOne.getNext());
 									currOne.getNext().setLast(lastOne);
 									currOne.setLast(null);
@@ -511,16 +513,21 @@ public class ReSDIFromMsaActionLinkVersion {
 									currOne = nextOne;
 								} else if (currOne.getMapSingleRecord().getChanged() == 0 && currOne.getMapSingleRecord().getOriginal().equalsIgnoreCase(currOne.getMapSingleRecord().getResult())) {
 									//delete current one
+									// delete records that gives not information
 									lastOne.setNext(currOne.getNext());
 									currOne.getNext().setLast(lastOne);
 									currOne.setLast(null);
 									currOne.setNext(null);
 									currOne = nextOne;
-								} else if (currOne.getMapSingleRecord().getChanged() < 0 && lastOne.getMapSingleRecord().getChanged() > 0
+								} else if ( (currOne.getMapSingleRecord().getChanged() < 0 && lastOne.getMapSingleRecord().getChanged() > 0
 										&& currOne.getMapSingleRecord().getOriginal().compareTo(lastOne.getMapSingleRecord().getResult()) == 0 &&
-										currOne.getMapSingleRecord().getBasement() == lastOne.getMapSingleRecord().getBasement()) { //delete one insertion and next reverse sence deletion
+										currOne.getMapSingleRecord().getBasement() == lastOne.getMapSingleRecord().getBasement() )
+										|| (currOne.getMapSingleRecord().getChanged() > 0 && lastOne.getMapSingleRecord().getChanged() < 0
+										&& currOne.getMapSingleRecord().getResult().compareTo(lastOne.getMapSingleRecord().getOriginal()) == 0 &&
+										(currOne.getMapSingleRecord().getBasement()-1) == lastOne.getMapSingleRecord().getBasement()) ) { //delete one insertion and next reverse sence deletion
+
 									//delete current one and prev
-									if (((currOne.getLast())).equals(sdiRecords.get(chrName).getFirst())) {
+									if (((currOne.getLast())) == (sdiRecords.get(chrName).getFirst())) {
 										try {
 											sdiRecords.get(chrName).deleteFirst();
 											sdiRecords.get(chrName).deleteFirst();
@@ -529,25 +536,12 @@ public class ReSDIFromMsaActionLinkVersion {
 										} catch (Exception e) {
 											e.printStackTrace();
 										}
-									} else {
-										currOne.getLast().getLast().setNext(currOne.getNext());
-										currOne.getNext().setLast(currOne.getLast().getLast());
-										Data temp = currOne.getNext();
-										currOne = temp;
-										lastOne = temp.getLast();
-									}
-								} else if (currOne.getMapSingleRecord().getChanged() > 0 && lastOne.getMapSingleRecord().getChanged() < 0
-										&& currOne.getMapSingleRecord().getResult().compareTo(lastOne.getMapSingleRecord().getOriginal()) == 0 &&
-										(currOne.getMapSingleRecord().getBasement()-1) == lastOne.getMapSingleRecord().getBasement()) {
-									//delete current one and prev
-									if (((currOne.getLast())) == (sdiRecords.get(chrName).getFirst())) {
+									} else if( currOne == sdiRecords.get(chrName).getLast() ){
 										try {
-
-											sdiRecords.get(chrName).deleteFirst();
-											sdiRecords.get(chrName).deleteFirst();
-											lastOne = sdiRecords.get(chrName).getFirst();
-											currOne = sdiRecords.get(chrName).getFirst().getNext();
-
+											sdiRecords.get(chrName).deleteLast();
+											sdiRecords.get(chrName).deleteLast();
+											currOne = sdiRecords.get(chrName).getLast();
+											lastOne = currOne.getLast();
 										} catch (Exception e) {
 											e.printStackTrace();
 										}
