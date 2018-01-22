@@ -15,6 +15,7 @@ public class SdiIndelToPedV2 {
 
 	private int threadNumber = 5;
 	private boolean ifcheckOverLap = true;
+	private boolean encode_overlap_INDEL_missing = true;
 	private String accessionListFile;
 	private String sdiLocation;
 	public SdiIndelToPedV2(){
@@ -37,12 +38,14 @@ public class SdiIndelToPedV2 {
 		StringBuffer helpMessage=new StringBuffer("INDEL synchronization pipeline\nE-mail:song@mpipz.mpg.de\nArguments:\n");
         helpMessage.append("  -t   [integer] thread number. (Default 5)\n");
         helpMessage.append("  -l   list of accession names\n");
+		helpMessage.append("  -m   (true/false) encode overlap INDEL with missing? (default: true)\n");
         helpMessage.append("  -s   the folder where sdi files are located\n");
         
         Options options = new Options();
         options.addOption("t",true,"threadnumber");
         options.addOption("l",true,"accessionListFile");
         options.addOption("s",true,"sdiLocation");
+		options.addOption("m",true,"encode_overlap_INDEL_missing");
         
         CommandLineParser parser = new PosixParser();
         CommandLine cmd=null;
@@ -53,6 +56,21 @@ public class SdiIndelToPedV2 {
             e.printStackTrace();
             System.exit(1);
         }
+
+
+		if(cmd.hasOption("m")){
+			String encode_overlap_INDEL_missing_string  = cmd.getOptionValue("m");
+			if( encode_overlap_INDEL_missing_string.equals("true") ){
+
+			}else if( encode_overlap_INDEL_missing_string.equals("false") ){
+				encode_overlap_INDEL_missing = false;
+			}else{
+				System.err.println("Please, check the parameters -m.");
+				System.err.println(helpMessage);
+				System.exit(1);
+			}
+		}
+
         if(cmd.hasOption("t")){
         	threadNumber = Integer.parseInt(cmd.getOptionValue("t"));
         }
@@ -70,7 +88,6 @@ public class SdiIndelToPedV2 {
         	System.err.println(helpMessage);
             System.exit(1);
         }
-        
         doit();
 	}
 	
@@ -178,7 +195,7 @@ public class SdiIndelToPedV2 {
 					while(isThisThreadUnrun){
 						if(threadCount.getCount() < threadNumber){
 			            	threadCount.plusOne();
-			            	OrginizeThisAccession main = new OrginizeThisAccession(accession, allIndelArrayLists, pedOutPut, ifcheckOverLap, chrArrayList, threadCount);
+			            	OrginizeThisAccession main = new OrginizeThisAccession(accession, allIndelArrayLists, pedOutPut, ifcheckOverLap, chrArrayList, encode_overlap_INDEL_missing, threadCount);
 			            	main.start();
 			                isThisThreadUnrun=false;
 			            }else{
@@ -252,13 +269,15 @@ public class SdiIndelToPedV2 {
 		private boolean ifcheckOverLap;
 		private MyThreadCount threadCount;
 		private ArrayList<String> chrArrayList;
-		public OrginizeThisAccession(Accession accession, HashMap<String, ArrayList<Indel>> allIndelArrayLists, PedOutPut pedOutPut, boolean ifcheckOverLap,ArrayList<String> chrArrayList, MyThreadCount threadCount ){
+		private boolean encode_overlap_INDEL_missing;
+		public OrginizeThisAccession(Accession accession, HashMap<String, ArrayList<Indel>> allIndelArrayLists, PedOutPut pedOutPut, boolean ifcheckOverLap,ArrayList<String> chrArrayList, boolean encode_overlap_INDEL_missing, MyThreadCount threadCount ){
 			this.accession=accession;
 			this.allIndelArrayLists=allIndelArrayLists;
 			this.pedOutPut=pedOutPut;
 			this.ifcheckOverLap=ifcheckOverLap;
 			this.threadCount=threadCount;
 			this.chrArrayList=chrArrayList;
+			this.encode_overlap_INDEL_missing=encode_overlap_INDEL_missing;
 		}
 		public void run( ){
 			StringBuffer content = new StringBuffer();
@@ -267,34 +286,55 @@ public class SdiIndelToPedV2 {
 			content.append(accessionName + "  " + accessionName + " 0 0 1	1");
 			for( String key : chrArrayList ){
 				for( Indel indel : allIndelArrayLists.get(key) ){
-					if(ifcheckOverLap){
-						if(accession.getIndelsMap().containsKey(indel.getChrName())){
+
+						if(ifcheckOverLap){
+							if(accession.getIndelsMap().containsKey(indel.getChrName())){
+								if( accession.getIndelsMap().get(indel.getChrName()).contains(indel) ){
+									content.append("  2 2"); // indeled
+								}else{
+									if (encode_overlap_INDEL_missing) {
+										int overlaped = 0;
+										for (Indel oindel : indel.getOverlapedIndles()) {
+											if (accession.getIndelsMap().get(indel.getChrName()).contains(oindel)) {
+												overlaped++;
+												break;
+											}
+										}
+										if (overlaped == 0) {
+											content.append("  1 1"); // not indeled
+										} else {
+											content.append("  0 0");//overlaped
+										}
+									} else {
+										int overlaped = 0;
+										int covered = 0;
+										for (Indel oindel : indel.getOverlapedIndles()) {
+											if (accession.getIndelsMap().get(indel.getChrName()).contains(oindel)) {
+												overlaped++;
+
+												if( indel.be_covered(oindel) ){
+													covered++;
+												}
+											}
+										}
+										if (covered == 0) {
+											content.append("  1 1"); // not being covered
+										} else {
+											content.append("  2 2"); //be covered
+										}
+									}
+								}
+							}else{
+								content.append("  1 1"); // not indeled
+							}
+						}else{
 							if( accession.getIndelsMap().get(indel.getChrName()).contains(indel) ){
 								content.append("  2 2"); // indeled
 							}else{
-								int overlaped=0;
-								for( Indel oindel : indel.getOverlapedIndles() ){
-									if( accession.getIndelsMap().get(indel.getChrName()).contains(oindel) ){
-										overlaped++;
-										break;
-									}
-								}
-								if( overlaped==0 ){
-									content.append("  1 1"); // not indeled
-								}else{
-									content.append("  0 0");//overlaped
-								}
+								content.append("  1 1"); // not indeled
 							}
-						}else{
-							content.append("  1 1"); // not indeled
 						}
-					}else{
-						if( accession.getIndelsMap().get(indel.getChrName()).contains(indel) ){
-							content.append("  2 2"); // indeled
-						}else{
-							content.append("  1 1"); // not indeled
-						}
-					}
+
 				}
 			}
 			System.out.println(accessionName + " end");
@@ -360,6 +400,17 @@ public class SdiIndelToPedV2 {
 			result = prime * result + length;
 			result = prime * result + start;
 			return result;
+		}
+		public boolean be_covered(Indel indel){
+			if( indel.getLength()<0 && this.getLength()<0 ){
+				if( (indel.getStart() <= this.getStart()) && ( (indel.getStart()+Math.abs(indel.getLength()))>= (this.getStart()+Math.abs(this.getLength())) ) ){
+					return true;
+				}else{
+					return false;
+				}
+			} else {
+				return false;
+			}
 		}
 		public boolean overlap(Indel indel) {
 			if( this.chrName.equals(indel.getChrName()) ){
