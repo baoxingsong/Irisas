@@ -33,7 +33,7 @@ class SDIRead  extends Thread{
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(folderLocation + File.separator + accessionName + ".sdi"));
 			String tempString = null;
-			Pattern p = Pattern.compile("(\\S+)\\s+(\\d+)\\s+0\\s+([ATCGatcg])\\s+([ATCGatcg])");
+			Pattern p = Pattern.compile("(\\S+)\\s+(\\d+)\\s+0\\s+([ATCGatcg])\\s+([ATCGatcg])"); // is there is an IUPAC code, we treat it as same with reference and ignore it
 			while ((tempString = reader.readLine()) != null) {
 			//	tempString=tempString.toUpperCase();
 				Matcher m = p.matcher(tempString);

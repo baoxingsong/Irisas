@@ -274,6 +274,8 @@ public class MapFileImpl {
 	
 	
 	public synchronized HashSet<MapSingleRecord> getOverLapRecordsByBasing(String chromsomeName, int basement){
+		// if there is a SNP, then there should be no deletion and the insertion would be ignored
+		// here a half inverval algorithm was designed to accelerate it
 		HashSet<MapSingleRecord> mapSingleRecords = new HashSet<MapSingleRecord>() ;
 		if(snpRecords.containsKey(chromsomeName)){
 			int start = 1;

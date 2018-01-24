@@ -1,5 +1,7 @@
 import OtherFunctions.IndelGwas.SdiIndelToPedV2;
 import OtherFunctions.IndelGwas.SNPgwas.SdiSnpToPed;
+import OtherFunctions.IndelGwas.SNPgwas.SdiSnpToPedMultipleAllic;
+import OtherFunctions.IndelGwas.SdiIndelToPedMultipleAllic;
 import OtherFunctions.ORFGwas.ExonerateProteinAndEstAndSdiToLofPed;
 import OtherFunctions.ORFgwasTestingUsedForNatureSubmission.ExtractCdsSequenceAndCheckORF;
 import OtherFunctions.ORFgwasTestingUsedForNatureSubmission.ExtractGenomeSequceAccordingtoCDs;
@@ -56,7 +58,14 @@ public class Irisas {
 		// run everything with one command
 		else if ( argv[0].equalsIgnoreCase("EasyRun") ){
 			new EasyRun(argv);
-		} else {
+		}
+		// several advanced testing functions\
+		else if ( argv[0].equalsIgnoreCase("SdiSnpToPedMultipleAllic") ){
+			new SdiSnpToPedMultipleAllic(argv);
+		}else if ( argv[0].equalsIgnoreCase("SdiIndelToPedMultipleAllic") ){
+			new SdiIndelToPedMultipleAllic(argv);
+		}
+		else {
 			System.err.println(helpMessage);
 		}
 	}
