@@ -276,7 +276,7 @@ public class SdiIndelToPedMultipleAllic {
 										covered++;
 									}else if ( oindel.be_covered(indel) ){
 										// do not change the value of code
-									}else{
+									}else if (oindel.getLength()<0 ){
 										code = indel_int.get(oindel); // this solution is not very good,
 										// but we do not have better way to do it
 									}
