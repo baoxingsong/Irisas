@@ -139,21 +139,21 @@ public class SdiIndelToPedMultipleAllic {
 		}
 		
 		for( String key : allIndelArrayLists.keySet() ){
-				for( int i=0; i<allIndelArrayLists.get(key).size();i++ ){
-					//System.out.println("i "+i);
-					Indel indel = allIndelArrayLists.get(key).get(i);
-					int end = indel.getStart()+Math.abs(indel.getLength());
-					for( int j=i+1; j<allIndelArrayLists.get(key).size();j++ ){
-						Indel indel2 = allIndelArrayLists.get(key).get(j);
-						if(indel.overlap(indel2)){
-							indel.getOverlapedIndles().add(indel2);
-							indel2.getOverlapedIndles().add(indel);
-						}else if( end < indel2.getStart() ){
-							j=allIndelArrayLists.get(key).size();
-							break;
-						}
+			for( int i=0; i<allIndelArrayLists.get(key).size();i++ ){
+				//System.out.println("i "+i);
+				Indel indel = allIndelArrayLists.get(key).get(i);
+				int end = indel.getStart()+Math.abs(indel.getLength());
+				for( int j=i+1; j<allIndelArrayLists.get(key).size();j++ ){
+					Indel indel2 = allIndelArrayLists.get(key).get(j);
+					if(indel.overlap(indel2)){
+						indel.getOverlapedIndles().add(indel2);
+						indel2.getOverlapedIndles().add(indel);
+					}else if( end < indel2.getStart() ){
+						j=allIndelArrayLists.get(key).size();
+						break;
 					}
 				}
+			}
 		}
 		
 		System.out.println("begin to output");
