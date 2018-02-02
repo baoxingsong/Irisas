@@ -7,6 +7,7 @@ import OtherFunctions.ORFGwas.ExonerateProteinAndEstAndSdiToLofPed;
 import OtherFunctions.ORFgwasTestingUsedForNatureSubmission.ExtractCdsSequenceAndCheckORF;
 import OtherFunctions.ORFgwasTestingUsedForNatureSubmission.ExtractGenomeSequceAccordingtoCDs;
 import OtherFunctions.ReSdiWithWindowsedMsa.CutTheWholeGenomeWithaWindowRamSaveVersion;
+import OtherFunctions.ReSdiWithWindowsedMsa.IndelSnpPlinkFromMsaAAA;
 import OtherFunctions.ReSdiWithWindowsedMsa.ReSDIFromMsaAAAVLinkversion;
 import me.songbx.action.EasyRun;
 
@@ -67,6 +68,8 @@ public class Irisas {
 			new SdiIndelToPedMultipleAllic(argv);
 		} else if ( argv[0].equalsIgnoreCase("SdiIndelToPedWithDecomposition") ){
 			new SdiIndelToPedWithDecomposition(argv);
+		} else if (argv[0].equalsIgnoreCase("IndelSnpPlinkFromMsa")){
+			new IndelSnpPlinkFromMsaAAA(argv);
 		}
 		else {
 			System.err.println(helpMessage);
