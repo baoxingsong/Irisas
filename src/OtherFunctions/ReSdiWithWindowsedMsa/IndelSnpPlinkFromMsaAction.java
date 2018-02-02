@@ -75,6 +75,7 @@ public class IndelSnpPlinkFromMsaAction {
 			HashSet<String> names_set = new HashSet<String>();
 			names_set.addAll(names);
 			for(String chrName : msaFileLocationsHashmap.keySet()){
+
 				ArrayList<MsaFile> msaFileLocations = msaFileLocationsHashmap.get(chrName);
 				Collections.sort(msaFileLocations); // sort it
 
@@ -95,33 +96,36 @@ public class IndelSnpPlinkFromMsaAction {
 					MsaSingleRecord refMsaSingleRecord = msaFileRecord.getRecords().get(refName);
 					int msaRefStart = refMsaSingleRecord.getStart();
 					int refLetterNumber = 0;
-					String refSeq = "";
+					StringBuffer refSeq_bf = new StringBuffer();
 					for (int ai = 0; ai < refMsaSingleRecord.getSequence().length(); ai++) {
 						if (refMsaSingleRecord.getSequence().charAt(ai) != '-') {
 							refLetterNumber++;
 						}
 						if (transcriptStart <= (msaRefStart + refLetterNumber - 1) && (msaRefStart + refLetterNumber - 1) < transcriptEnd) {
-							refSeq = refSeq + refMsaSingleRecord.getSequence().charAt(ai);
+                            refSeq_bf.append(refMsaSingleRecord.getSequence().charAt(ai));
 						} else if ((msaRefStart + refLetterNumber - 1) == transcriptEnd && refMsaSingleRecord.getSequence().charAt(ai) != '-') {
-							refSeq = refSeq + refMsaSingleRecord.getSequence().charAt(ai);
+                            refSeq_bf.append( refMsaSingleRecord.getSequence().charAt(ai) );
 						}
 					}
+                    String refSeq = refSeq_bf.toString();
 					//reference end
 
-					char[][] sequences = new char[refSeq.length()][names.size()];
+                    // prepare sequences matrix begin
+					char[][] sequences = new char[refSeq.length()+1][names.size()+1];
 					int index_i = 0;
-
 					HashMap<String, Integer> boundary_indels = new HashMap<String, Integer>();
-
 					for(String name : names){
 						int index_j = 0;
 						int targetTranscriptStart = 0;
 						int targetTranscriptEnd = 0;
 						MsaSingleRecord targetMsaSingleRecord = msaFileRecord.getRecords().get(name);
 						int msaTargetStart = targetMsaSingleRecord.getStart();
-						int targetLetterNumber = 0;
+
 						//deleted the extend sequence only keep the wanted region
 
+
+                        refLetterNumber = 0;
+                        int targetLetterNumber = 0;
 						for (int ai = 0; ai < refMsaSingleRecord.getSequence().length(); ai++) {
 							if (refMsaSingleRecord.getSequence().charAt(ai) != '-') {
 								refLetterNumber++;
@@ -151,7 +155,6 @@ public class IndelSnpPlinkFromMsaAction {
 						if( lastEnds.get(name) >= targetTranscriptStart ){
 							int overLapLength = lastEnds.get(name) - targetTranscriptStart;
 							overLapLength++;
-
 							int corrected = 0;
 							for( int t=0; t<refSeq.length(); t++ ){
 								if(corrected<overLapLength && sequences[t][index_i]!='-'){
@@ -159,7 +162,6 @@ public class IndelSnpPlinkFromMsaAction {
 									corrected++;
 								}
 							}
-
 							int largerEnd;
 							if( targetTranscriptEnd > lastEnds.get(name) ){
 								largerEnd = targetTranscriptEnd;
@@ -171,11 +173,9 @@ public class IndelSnpPlinkFromMsaAction {
 							lastEnds.put(name, targetTranscriptEnd);
 						}
                         // solve boundary problem by adapting the result of previous window end
-
 						boundary_indels.put(name, targetTranscriptStart - lastEnds.get(name));
-
 						index_i ++;
-					}
+					}// prepare sequences matria end
 
 					// output boundary indels begin
 					outTped.print(chrName+"\t"+ chrName+"_"+transcriptStart+"_b\t0\t"+transcriptStart);
@@ -190,15 +190,16 @@ public class IndelSnpPlinkFromMsaAction {
 					outTped.println();
 					// output boundary indels end
 
-
+                    // output matrix start
                     String lastCol_seq = "";
                     int lastLength = 0;
-					for ( int index_array = 0; index_array<names.size(); index_array++ ){
+					for ( int index_array = 0; index_array < refSeq.length(); index_array++ ){
 
 					    StringBuffer thisCol_seqB = new StringBuffer();
 
 						HashSet<Character> thisCol = new HashSet<Character>();
-						for ( Character c : sequences[index_array] ){
+						for( int index_array2 = 0; index_array2<names.size(); index_array2++ ){
+                            Character c = sequences[index_array][index_array2];
 							thisCol.add(c);
 							if( c == '-' ){
                                 thisCol_seqB.append("2");
@@ -254,11 +255,13 @@ public class IndelSnpPlinkFromMsaAction {
                             }
 						}
 					}
+					// output matrix end
 				}
 
                 HashMap<String, Integer> chrLengths = new  HashMap<String, Integer>();
 
 				// the part after last window begin
+
 				for(String name : names) {
 					BufferedReader reader = new BufferedReader(new FileReader(genomeFolder + File.separator + name + ".fa.fai"));
 					String tempString = null;
@@ -271,7 +274,8 @@ public class IndelSnpPlinkFromMsaAction {
 						}
 					}
 				}
-				for( String name : names ){
+                outTped.print(chrName + "\t" + chrName + "_" + chrLengths.get(refName)+"_end" + "\t0\t" + chrLengths.get(refName));
+                for( String name : names ){
 				    int this_name_chr_length;
 				    if (chrLengths.containsKey(name)){
 				        this_name_chr_length = chrLengths.get(name);

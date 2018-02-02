@@ -131,7 +131,6 @@ public class IndelSnpPlinkFromMsaAAA {
                 }
             }
         }
-
         doit();
 	}
 	
@@ -178,7 +177,6 @@ public class IndelSnpPlinkFromMsaAAA {
 					}
 				}
                 // get msa file list end
-
 
                 new IndelSnpPlinkFromMsaAction(names, msaFileLocationsHashmap, threadNumber, refName, genomeFolder);
 			}
