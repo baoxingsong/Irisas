@@ -13,20 +13,15 @@ import java.util.regex.Pattern;
 
 public class IndelSnpPlinkFromMsaAAA {
 	private int threadNumber = 5;
-    private int numberOfAccessions = 50;
 
     private String msaFolder;
     private String accessionListFile;
     private String refName;
     private ArrayList<String> chrs = new  ArrayList<String>();
-    private String outPutPath;
     private String genomeFolder;
 
     public void setThreadNumber(int threadNumber) {
         this.threadNumber = threadNumber;
-    }
-    public void setNumberOfAccessions(int numberOfAccessions) {
-        this.numberOfAccessions = numberOfAccessions;
     }
     public void setMsaFolder(String msaFolder) {
         this.msaFolder = msaFolder;
@@ -40,9 +35,6 @@ public class IndelSnpPlinkFromMsaAAA {
     public void setChrs(ArrayList<String> chrs) {
         this.chrs = chrs;
     }
-    public void setOutPutPath(String outPutPath) {
-        this.outPutPath = outPutPath;
-    }
     public void setGenomeFolder(String genomeFolder) {
         this.genomeFolder = genomeFolder;
     }
@@ -53,12 +45,10 @@ public class IndelSnpPlinkFromMsaAAA {
 	public IndelSnpPlinkFromMsaAAA(String[] argv ){
 		StringBuffer helpMessage=new StringBuffer("INDEL synchronization pipeline\nE-mail:song@mpipz.mpg.de\nArguments:\n");
         helpMessage.append("  -t   [integer] thread number. (Default 5)\n");
-        helpMessage.append("  -n   [integer] number of accession to process for each batch, should be larger than thread number (Default 50)\n");
         helpMessage.append("  -i   input folder where could find MSA result\n");
         helpMessage.append("  -l   list of accession names\n");
         helpMessage.append("  -r   name of reference accession/line\n");
         helpMessage.append("  -c   list of chromosome names\n");
-        helpMessage.append("  -o   output folder\n");
         helpMessage.append("  -g   the folder where the genome sequences and sdi files are located\n");
         
 		Options options = new Options();
@@ -83,9 +73,6 @@ public class IndelSnpPlinkFromMsaAAA {
         }
         if(cmd.hasOption("t")){
         	threadNumber = Integer.parseInt(cmd.getOptionValue("t"));
-        }
-        if(cmd.hasOption("n")){
-        	numberOfAccessions = Integer.parseInt(cmd.getOptionValue("n"));
         }
         if(cmd.hasOption("i")){
         	msaFolder = cmd.getOptionValue("i");
@@ -113,13 +100,6 @@ public class IndelSnpPlinkFromMsaAAA {
         	chrlist = cmd.getOptionValue("c");
         }else{
         	System.err.println("-c is missing. Please, check the parameters.");
-        	System.err.println(helpMessage);
-            System.exit(1);
-        }
-        if(cmd.hasOption("o")){
-        	outPutPath = cmd.getOptionValue("o");
-        }else{
-        	System.err.println("-o is missing. Please, check the parameters.");
         	System.err.println(helpMessage);
             System.exit(1);
         }
@@ -181,14 +161,6 @@ public class IndelSnpPlinkFromMsaAAA {
         }
         // prepare accession List end
         
-        // prepare folder for output begin
-        File outPutPathFolder = new File(outPutPath);
-		if( outPutPathFolder.exists() ){
-			
-		}else{
-			outPutPathFolder.mkdirs();
-		}
-        // prepare folder for output end
 
         for(String ss1 : chrs){
         	if( (new File(msaFolder + File.separator + ss1)).isDirectory() ){
@@ -207,15 +179,8 @@ public class IndelSnpPlinkFromMsaAAA {
 				}
                 // get msa file list end
 
-                // prepare folder for output begin
-				File outputFolder = new File(outPutPath + File.separator + ss1+"/");
-				if( outputFolder.exists() ){
-					
-				}else{
-					outputFolder.mkdirs();
-				}// prepare folder for output end
 
-                new IndelSnpPlinkFromMsaAction(names, msaFileLocationsHashmap, threadNumber, outPutPath + File.separator+ss1+File.separator, refName, genomeFolder);
+                new IndelSnpPlinkFromMsaAction(names, msaFileLocationsHashmap, threadNumber, refName, genomeFolder);
 			}
 		}
 	}

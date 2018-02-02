@@ -20,16 +20,14 @@ public class IndelSnpPlinkFromMsaAction {
 	private int threadNumber;
 
 	private HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap = new HashMap<String, ArrayList<MsaFileRecord>>();
-	private String outputDir;
 
 	private String refName;
 	private String genomeFolder;
-	public IndelSnpPlinkFromMsaAction(ArrayList<String> names, HashMap<String, ArrayList<MsaFile>> msaFileLocationsHashmap, int threadNumber, String outputDir,
+	public IndelSnpPlinkFromMsaAction(ArrayList<String> names, HashMap<String, ArrayList<MsaFile>> msaFileLocationsHashmap, int threadNumber,
                                       String refName, String genomeFolder){
 		this.names=names;
 		this.msaFileLocationsHashmap=msaFileLocationsHashmap;
 		this.threadNumber=threadNumber;
-		this.outputDir=outputDir;
 		this.genomeFolder=genomeFolder;
 		this.refName = refName;
 		this.doIt();
