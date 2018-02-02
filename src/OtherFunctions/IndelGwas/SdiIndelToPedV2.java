@@ -226,14 +226,12 @@ public class SdiIndelToPedV2 {
 				PrintWriter outPut2 = new PrintWriter("./indel.map");
 				PrintWriter outPut3 = new PrintWriter("./indel_own.map");
 				outPut3.println("chrName\tindelid\tstart\tlength");
-				int indelId = 0;
 				for( String key : chrArrayList ){
 					for( Indel indel : allIndelArrayLists.get(key) ){
-						indelId++;
 						String chrName = indel.getChrName();
 						chrName = chrName.replace("Chr", "");
-						outPut2.println(chrName + "\tindel_"+indel.getChrName()+"_" + indelId + "\t0\t" + indel.getStart());
-						outPut3.println(chrName + "\tindel_"+indel.getChrName()+"_" + indelId + "\t" + indel.getStart()+"\t"+indel.getLength());
+						outPut2.println(chrName + "\tindel_"+indel.getChrName()+"_" + indel.getStart() + "_"+indel.getLength() + "\t0\t" + indel.getStart());
+						outPut3.println(chrName + "\tindel_"+indel.getChrName()+"_" + indel.getStart() + "_"+indel.getLength() + "\t" + indel.getStart()+"\t"+indel.getLength());
 					}
 				}
 				outPut2.close();

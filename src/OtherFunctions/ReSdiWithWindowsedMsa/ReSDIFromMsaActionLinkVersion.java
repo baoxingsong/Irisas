@@ -279,12 +279,12 @@ public class ReSDIFromMsaActionLinkVersion {
 									String newSequence=oldSequence;
 									int corrected = 0;
 									for( int t=0; t<oldSequence.length(); t++ ){
-										if(corrected<overLapLength && oldSequence.charAt(t)!='-'){										
-											newSequence=newSequence.subSequence(0, t)+"-"+newSequence.subSequence(t+1, newSequence.length());										
+										if(corrected<overLapLength && oldSequence.charAt(t)!='-'){
+											newSequence=newSequence.subSequence(0, t)+"-"+newSequence.subSequence(t+1, newSequence.length());
 											corrected++;
-										}									
+										}
 									}
-									
+
 									int largetEnd;
 									if( twoSeqOfMsaResults.get(j).getResultEnd() > twoSeqOfMsaResults.get(j-1).getResultEnd() ){
 										largetEnd = twoSeqOfMsaResults.get(j).getResultEnd();
@@ -297,7 +297,7 @@ public class ReSDIFromMsaActionLinkVersion {
 									twoSeqOfMsaResults.remove(j-1);
 		//							System.out.println("273 " + j);
 									j-=2;
-								
+
 								}else if( twoSeqOfMsaResults.get(j).getResultStart() < twoSeqOfMsaResults.get(j-1).getResultStart() ){
 									System.out.println("to be complete 302 ");
 								}

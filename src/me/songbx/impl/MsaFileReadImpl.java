@@ -28,7 +28,7 @@ public class MsaFileReadImpl {
 			msaFileRecord.setStart(start);
 			msaFileRecord.setEnd(end);
 		}else{
-			System.err.println("The file " + fileLocation + " could not match the stat and end detection regulary");
+			System.err.println("The file " + fileLocation + " could not match the stat and end detection regular");
 		}
 		BufferedReader reader = null;
 		try {

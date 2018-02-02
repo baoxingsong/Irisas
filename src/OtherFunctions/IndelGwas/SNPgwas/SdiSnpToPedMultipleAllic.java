@@ -303,13 +303,11 @@ public class SdiSnpToPedMultipleAllic{
 		outPut.print("\n");
 		outPut.close();
 		PrintWriter outPutIDMap = new PrintWriter("snp.map");
-		int snpId = 0;
 		for( int i =0; i < markerPostionAs.size(); i++ ){
 			MarkerPostion markerPostion = markerPostionAs.get(i);
-			snpId++;
 			String chrname = markerPostion.getChrName();
 			chrname = chrname.replace("Chr", "");
-			outPutIDMap.println(chrname + "\t" + snpId + "\t0\t" + markerPostion.getPosition());
+			outPutIDMap.println(chrname + "\t" + chrname+"_"+markerPostion.getPosition()+"_"+markerPostion.getColNaChar() + "\t0\t" + markerPostion.getPosition());
 		}
 		outPutIDMap.close();
 	}
