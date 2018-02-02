@@ -2,10 +2,7 @@ package OtherFunctions.ReSdiWithWindowsedMsa;
 
 import org.apache.commons.cli.*;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Matcher;
@@ -46,7 +43,7 @@ public class IndelSnpPlinkFromMsaAAA {
 		StringBuffer helpMessage=new StringBuffer("INDEL synchronization pipeline\nE-mail:song@mpipz.mpg.de\nArguments:\n");
         helpMessage.append("  -t   [integer] thread number. (Default 5)\n");
         helpMessage.append("  -i   input folder where could find MSA result\n");
-        helpMessage.append("  -l   list of accession names\n");
+        helpMessage.append("  -l   list of accession names. (the reference accession should be in included)\n");
         helpMessage.append("  -r   name of reference accession/line\n");
         helpMessage.append("  -c   list of chromosome names\n");
         helpMessage.append("  -g   the folder where the genome sequences and sdi files are located\n");
@@ -159,8 +156,20 @@ public class IndelSnpPlinkFromMsaAAA {
             }
         }
         // prepare accession List end
-        
+        try {
+            // tfam begin
+            PrintWriter outTfam = new PrintWriter(new FileOutputStream("genometype.tfam"), true);
+            for(String name : names){
+                outTfam.println(name+"\t"+name+"\t0\t0\t1\t1");
+            }
+            outTfam.close();
+            // tfam end
 
+            PrintWriter outTped = new PrintWriter(new FileOutputStream("genometype.tped"), true); // empty it
+            outTped.close();
+        } catch (FileNotFoundException e){
+            e.printStackTrace();
+        }
         for(String ss1 : chrs){
         	if( (new File(msaFolder + File.separator + ss1)).isDirectory() ){
         	    // get msa file list begin
