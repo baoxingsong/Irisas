@@ -193,7 +193,7 @@ public class IndelSnpPlinkFromMsaAction {
                     int lastLength = 0;
                     int ref_seq_index = 0;
 					for ( int index_array = 0; index_array < refSeq.length(); index_array++ ){
-						if( refSeq.charAt(index_array) == '-' ){
+						if( refSeq.charAt(index_array) != '-' ){
 							ref_seq_index ++;
 						}
 					    StringBuffer thisCol_seqB = new StringBuffer();
@@ -240,7 +240,6 @@ public class IndelSnpPlinkFromMsaAction {
                                     lastLength=0;
                                     lastCol_seq="";
                                 }
-
                                 // output this genotype begin
                                 outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + " 0 " + transcriptStart+ref_seq_index);
                                 for (int name_index = 0; name_index < names.size(); name_index++) {

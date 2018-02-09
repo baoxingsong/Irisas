@@ -178,7 +178,7 @@ public class IndelPlinkFromMsaAction {
                     int lastLength = 0;
 					int ref_seq_index = -1;
 					for ( int index_array = 0; index_array < refSeq.length(); index_array++ ){
-						if( refSeq.charAt(index_array) == '-' ){
+						if( refSeq.charAt(index_array) != '-' ){
 							ref_seq_index ++;
 						}
 					    StringBuffer thisCol_seqB = new StringBuffer();
