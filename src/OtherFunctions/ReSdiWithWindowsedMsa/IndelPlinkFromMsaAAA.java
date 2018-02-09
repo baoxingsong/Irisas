@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class IndelSnpPlinkFromMsaAAA {
+public class IndelPlinkFromMsaAAA {
 
     private String msaFolder;
     private String accessionListFile;
@@ -31,11 +31,11 @@ public class IndelSnpPlinkFromMsaAAA {
     public void setGenomeFolder(String genomeFolder) {
         this.genomeFolder = genomeFolder;
     }
-    public IndelSnpPlinkFromMsaAAA(){
+    public IndelPlinkFromMsaAAA(){
 
     }
 
-	public IndelSnpPlinkFromMsaAAA(String[] argv ){
+	public IndelPlinkFromMsaAAA(String[] argv ){
 		StringBuffer helpMessage=new StringBuffer("INDEL synchronization pipeline\nE-mail:song@mpipz.mpg.de\nArguments:\n");
         helpMessage.append("  -i   input folder where could find MSA result\n");
         helpMessage.append("  -l   list of accession names. (the reference accession should be in included)\n");
@@ -103,13 +103,14 @@ public class IndelSnpPlinkFromMsaAAA {
         File file2 = new File(chrlist);
         BufferedReader reader2 = null;
         try {
+
             Pattern p = Pattern.compile("\\w");
 
             reader2 = new BufferedReader(new FileReader(file2));
             String tempString = null;
             while ((tempString = reader2.readLine()) != null) {
                 Matcher m = p.matcher(tempString);
-                if( m.find() ) {
+                if( m.find() ){
                     chrs.add(tempString);
                 }
             }
@@ -137,9 +138,7 @@ public class IndelSnpPlinkFromMsaAAA {
         	reader = new BufferedReader(new FileReader(file));
             String tempString = null;
             while ((tempString = reader.readLine()) != null) {
-                if( ! tempString.equals(refName) ) {
-                    names.add(tempString);
-                }
+            	names.add(tempString);
             }
             names.add(refName);
         }catch (IOException e) {
@@ -156,14 +155,14 @@ public class IndelSnpPlinkFromMsaAAA {
         // prepare accession List end
         try {
             // tfam begin
-            PrintWriter outTfam = new PrintWriter(new FileOutputStream("indel_snp_from_msa.tfam"), true);
+            PrintWriter outTfam = new PrintWriter(new FileOutputStream("msa_indel.tfam"), true);
             for(String name : names){
                 outTfam.println(name+"\t"+name+"\t0\t0\t1\t1");
             }
             outTfam.close();
             // tfam end
 
-            PrintWriter outTped = new PrintWriter(new FileOutputStream("indel_snp_from_msa.tped"), true); // empty it
+            PrintWriter outTped = new PrintWriter(new FileOutputStream("msa_indel.tped"), true); // empty it
             outTped.close();
         } catch (FileNotFoundException e){
             e.printStackTrace();
@@ -185,7 +184,7 @@ public class IndelSnpPlinkFromMsaAAA {
 				}
                 // get msa file list end
 
-                new IndelSnpPlinkFromMsaAction(names, msaFileLocationsHashmap, refName, genomeFolder);
+                new IndelPlinkFromMsaAction(names, msaFileLocationsHashmap, refName, genomeFolder);
 			}
 		}
 	}

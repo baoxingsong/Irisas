@@ -8,6 +8,7 @@ import OtherFunctions.ORFgwasTestingUsedForNatureSubmission.ExtractCdsSequenceAn
 import OtherFunctions.ORFgwasTestingUsedForNatureSubmission.ExtractGenomeSequceAccordingtoCDs;
 import OtherFunctions.ReSdiWithWindowsedMsa.CutTheWholeGenomeWithaWindowRamSaveVersion;
 import OtherFunctions.ReSdiWithWindowsedMsa.IndelSnpPlinkFromMsaAAA;
+import OtherFunctions.ReSdiWithWindowsedMsa.IndelPlinkFromMsaAAA;
 import OtherFunctions.ReSdiWithWindowsedMsa.ReSDIFromMsaAAAVLinkversion;
 import me.songbx.action.EasyRun;
 
@@ -70,6 +71,8 @@ public class Irisas {
 			new SdiIndelToPedWithDecomposition(argv);
 		} else if (argv[0].equalsIgnoreCase("IndelSnpPlinkFromMsa")){
 			new IndelSnpPlinkFromMsaAAA(argv);
+		} else if (argv[0].equalsIgnoreCase("IndelPlinkFromMsa")){
+			new IndelPlinkFromMsaAAA(argv);
 		}
 		else {
 			System.err.println(helpMessage);

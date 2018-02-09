@@ -1,12 +1,14 @@
 package OtherFunctions.ReSdiWithWindowsedMsa;
 
 import me.songbx.impl.MsaFileReadImpl;
-import me.songbx.model.*;
-import me.songbx.service.ChromoSomeReadService;
-import me.songbx.util.MyThreadCount;
+import me.songbx.model.MsaFileRecord;
+import me.songbx.model.MsaSingleRecord;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,29 +16,22 @@ import java.util.regex.Pattern;
  * this is not done yet, got some problem for the boundary region insertions
  * */
 
-public class IndelSnpPlinkFromMsaAction {
+public class IndelPlinkFromMsaAction {
 	private ArrayList<String> names;
 	private HashMap<String, ArrayList<MsaFile>> msaFileLocationsHashmap;
+
 	private HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap = new HashMap<String, ArrayList<MsaFileRecord>>();
+
 	private String refName;
 	private String genomeFolder;
-	public IndelSnpPlinkFromMsaAction(ArrayList<String> names, HashMap<String, ArrayList<MsaFile>> msaFileLocationsHashmap,
-                                      String refName, String genomeFolder){
+	public IndelPlinkFromMsaAction(ArrayList<String> names, HashMap<String, ArrayList<MsaFile>> msaFileLocationsHashmap,
+                                   String refName, String genomeFolder){
 		this.names=names;
 		this.msaFileLocationsHashmap=msaFileLocationsHashmap;
 		this.genomeFolder=genomeFolder;
 		this.refName = refName;
 		this.doIt();
 	}
-	private HashMap<Character, Integer> outputCode = new HashMap<Character, Integer>();
-
-	private int getDnaCode( char c ){
-	    if ( outputCode.containsKey(c) ){
-	        return outputCode.get(c);
-        }else{
-	        return outputCode.get('N');
-        }
-    }
 
 	private void doIt(){
 		try {
@@ -51,30 +46,20 @@ public class IndelSnpPlinkFromMsaAction {
 					try {
 						Process p = new ProcessBuilder("samtools faidx " + fastaPath).start();
 					}catch (final Exception e) {
-						System.err.print("genome sequence index file could not be created");
 						e.printStackTrace();
+						System.err.print("genome sequence index file could not be created");
 						System.exit(1);
 					}
 				}
 			}
-			// prepare the chromosome length information by creating fasta index file begin
+			// prepare the chromosome length information by creating fasta index file end
 
-            // encode nucleic acids into integer begin
-			outputCode.put('A', 1);
-			outputCode.put('T', 2);
-			outputCode.put('G', 3);
-			outputCode.put('C', 4);
-			outputCode.put('-', 5);
-			outputCode.put('N', 6);
-            // encode nucleic acids into integer end
-
-            PrintWriter outTped = new PrintWriter(new FileOutputStream("indel_snp_from_msa.tped",  true), true);
+            PrintWriter outTped = new PrintWriter(new FileOutputStream("msa_indel.tped",  true), true);
 			HashSet<String> names_set = new HashSet<String>();
 			names_set.addAll(names);
 			for(String chrName : msaFileLocationsHashmap.keySet()){
 				String chrNameSimple = chrName;
 				chrNameSimple = chrNameSimple.replace("Chr", "");
-
 				ArrayList<MsaFile> msaFileLocations = msaFileLocationsHashmap.get(chrName);
 				Collections.sort(msaFileLocations); // sort it
 
@@ -101,7 +86,7 @@ public class IndelSnpPlinkFromMsaAction {
 							refLetterNumber++;
 						}
 						if (transcriptStart <= (msaRefStart + refLetterNumber - 1) && (msaRefStart + refLetterNumber - 1) < transcriptEnd) {
-                            refSeq_bf.append( refMsaSingleRecord.getSequence().charAt(ai) );
+                            refSeq_bf.append(refMsaSingleRecord.getSequence().charAt(ai));
 						} else if ((msaRefStart + refLetterNumber - 1) == transcriptEnd && refMsaSingleRecord.getSequence().charAt(ai) != '-') {
                             refSeq_bf.append( refMsaSingleRecord.getSequence().charAt(ai) );
 						}
@@ -130,7 +115,7 @@ public class IndelSnpPlinkFromMsaAction {
 							if (targetMsaSingleRecord.getSequence().charAt(ai) != '-') {
 								targetLetterNumber++;
 							}
-							if (transcriptStart == (msaRefStart + refLetterNumber - 1) && refMsaSingleRecord.getSequence().charAt(ai) != '-') {
+							if (transcriptStart == (msaRefStart + refLetterNumber - 1) && refMsaSingleRecord.getSequence().charAt(ai) != '-') { // this position is unique
 								targetTranscriptStart = msaTargetStart + targetLetterNumber - 1;
 								if (targetMsaSingleRecord.getSequence().charAt(ai) == '-') {
 									targetTranscriptStart++;
@@ -148,7 +133,7 @@ public class IndelSnpPlinkFromMsaAction {
 							}
 						}
 
-						boundary_indels.put(name, targetTranscriptStart - lastEnds.get(name) );
+                        boundary_indels.put(name, targetTranscriptStart - lastEnds.get(name) );
 
 						// solve boundary problem by adapting the result of previous window begin
 						if( lastEnds.get(name) >= targetTranscriptStart ){
@@ -191,7 +176,7 @@ public class IndelSnpPlinkFromMsaAction {
                     // output matrix start
                     String lastCol_seq = "";
                     int lastLength = 0;
-                    int ref_seq_index = 0;
+					int ref_seq_index = -1;
 					for ( int index_array = 0; index_array < refSeq.length(); index_array++ ){
 						if( refSeq.charAt(index_array) == '-' ){
 							ref_seq_index ++;
@@ -207,55 +192,26 @@ public class IndelSnpPlinkFromMsaAction {
                                 thisCol_seqB.append("1"); // not deletion
                             }
 						}
-						if( thisCol.size() > 1 ) {
-						    if( thisCol.size()==2 && thisCol.contains('-') ){ // there is only INDEL variation
-                                String thisCol_seq = thisCol_seqB.toString();
-                                if ( lastLength >0){
-                                    if( thisCol_seq.equalsIgnoreCase(lastCol_seq) ) { // if the INDEL state of this one is same with last one
-                                        lastLength++;
-                                    }else { // if the INDEL state of this one is different with last one, then output
-                                        outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + transcriptStart+ref_seq_index);
-                                        for (int name_index = 0; name_index < names.size(); name_index++) {
-                                            char code = lastCol_seq.charAt(name_index);
-                                            outTped.print(" " + code + " " + code);
-                                        }
-                                        outTped.println();
+						if( thisCol.contains('-') ) {
+							String thisCol_seq = thisCol_seqB.toString();
+							if ( lastLength >0){
+								if( thisCol_seq.equalsIgnoreCase(lastCol_seq) ) { // if the INDEL state of this one is same with last one
+									lastLength++;
+								}else { // if the INDEL state of this one is different with last one, then output
+									outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + transcriptStart+ref_seq_index);
+									for (int name_index = 0; name_index < names.size(); name_index++) {
+										char code = lastCol_seq.charAt(name_index);
+										outTped.print(" " + code + " " + code);
+									}
+									outTped.println();
 
-                                        lastCol_seq = thisCol_seq;
-                                        lastLength = 1;
-                                    }
-                                } else { // the last is not INDEL
-                                    lastCol_seq = thisCol_seq;
-                                    lastLength = 1;
-                                }
-                            } else {
-						        if ( lastLength > 0 ){ // last one/several contains only INDEL, this one changed, then try to output
-                                    outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + transcriptStart+ref_seq_index);
-                                    for (int name_index = 0; name_index < names.size(); name_index++) {
-                                        char code = lastCol_seq.charAt(name_index);
-                                        outTped.print(" " + code + " " + code);
-                                    }
-                                    outTped.println();
-
-                                    lastLength=0;
-                                    lastCol_seq="";
-                                }
-
-                                // output this genotype begin
-                                outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + " 0 " + transcriptStart+ref_seq_index);
-                                for (int name_index = 0; name_index < names.size(); name_index++) {
-                                    char this_char = sequences[index_array][name_index];
-                                    if (outputCode.containsKey(this_char)) {
-
-                                    } else { // sign IUPAC code to reference Seq
-                                        this_char = sequences[index_array][names.size() - 1]; // get the sequence of reference
-                                    }
-                                    int code = getDnaCode(this_char);
-                                    outTped.print(" " + code + " " + code);
-                                }
-                                outTped.println();
-                                // output this genotype end
-                            }
+									lastCol_seq = thisCol_seq;
+									lastLength = 1;
+								}
+							} else { // the last is not INDEL
+								lastCol_seq = thisCol_seq;
+								lastLength = 1;
+							}
 						}else if (lastLength >0) { // if the INDEL state of this one is different with last one, then output
                             outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + transcriptStart+ref_seq_index);
                             for (int name_index = 0; name_index < names.size(); name_index++) {

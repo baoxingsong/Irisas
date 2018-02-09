@@ -131,15 +131,13 @@ public class SdiIndelToPedWithDecomposition {
 		// deletion begin
 		HashMap<String, ArrayList<Indel>> allDeletionArrayLists = new HashMap<String, ArrayList<Indel>>();
 		for( String key : allDeletions.keySet() ){
-			for( Indel indel : allDeletions.get(key) ){
-				if( allDeletionArrayLists.containsKey(key) ){
+			if( allDeletionArrayLists.containsKey(key) ){
 
-				}else{
-					chrArrayList.add(key);
-					allDeletionArrayLists.put(key, new ArrayList<Indel>());
-				}
-				allDeletionArrayLists.get(key).add(indel);
+			}else{
+				chrArrayList.add(key);
+				allDeletionArrayLists.put(key, new ArrayList<Indel>());
 			}
+			allDeletionArrayLists.get(key).addAll(allDeletions.get(key));
 		}
 		// decompose all the overlapped deletions in a region
 		for( String key : allDeletions.keySet() ){
@@ -202,50 +200,59 @@ public class SdiIndelToPedWithDecomposition {
 		// deletion end
 
 
-
 		// insertion begin
 		HashMap<String, ArrayList<Indel>> allInsertionArrayLists = new HashMap<String, ArrayList<Indel>>();
 		for( String key : allInsertations.keySet() ){
-			for( Indel indel : allInsertations.get(key) ){
-				if( allInsertionArrayLists.containsKey(key) ){
+			if( allInsertionArrayLists.containsKey(key) ){
 
-				}else{
-					allInsertionArrayLists.put(key, new ArrayList<Indel>());
-				}
-				allInsertionArrayLists.get(key).add(indel);
+			}else{
+				allInsertionArrayLists.put(key, new ArrayList<Indel>());
 			}
-		}
-		// decompose all the overlapped INDELs in a region
+			allInsertionArrayLists.get(key).addAll( allInsertations.get(key));
+		}// decompose all the overlapped INDELs in a region
+
 		for( String key : allDeletions.keySet() ){
 			Collections.sort(allInsertionArrayLists.get(key));
-//			boolean ifThereOverlap = true;
-//			while( ifThereOverlap ){
-//				ifThereOverlap = false;
-//				ArrayList<Indel> newIndelList =new ArrayList<Indel>();
-//				for( int indelIndex = 0; indelIndex < allInsertionArrayLists.get(key).size(); indelIndex++ ){
-//					ArrayList<Integer> allBreakPoints = new ArrayList<Integer>();
-//					int start1 = allInsertionArrayLists.get(key).get(indelIndex).getStart();
-//					int end1 = allInsertionArrayLists.get(key).get(indelIndex).getStart() + Math.abs(allInsertionArrayLists.get(key).get(indelIndex).getLength());
-//					int theCurrentLargestEnd = end1;
-//					allBreakPoints.add(start1);
-//					allBreakPoints.add(end1);
-//					for ( int indelIndexj = indelIndex+1; indelIndexj < allInsertionArrayLists.get(key).size(); indelIndexj++){
-//						int start2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart();
-//						int end2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart() + Math.abs(allInsertionArrayLists.get(key).get(indelIndex).getLength());
-//						if (start2 == start1){
-//							ifThereOverlap = true;
-//							if( end2 > theCurrentLargestEnd ){
-//								theCurrentLargestEnd = end2;
-//							}
-//							allBreakPoints.add(start2);
-//							allBreakPoints.add(end2);
-//						}
-//
-//					}
-//				}
-//				Collections.sort( newIndelList );
-//				allDeletionArrayLists.put(key, newIndelList);
-//			}
+			boolean ifThereOverlap = true;
+			while( ifThereOverlap ){
+				ifThereOverlap = false;
+				ArrayList<Indel> newIndelList =new ArrayList<Indel>();
+				for( int indelIndex = 0; indelIndex < allInsertionArrayLists.get(key).size(); indelIndex++ ){
+					ArrayList<Integer> allLengths = new ArrayList<Integer>();
+					int start1 = allInsertionArrayLists.get(key).get(indelIndex).getStart();
+					int length1 = allInsertionArrayLists.get(key).get(indelIndex).getStart() + Math.abs(allInsertionArrayLists.get(key).get(indelIndex).getLength());
+					allLengths.add(length1);
+					HashSet<Indel> overlappedInsertation = new HashSet<Indel>();
+					overlappedInsertation.add(allInsertionArrayLists.get(key).get(indelIndex));
+
+					for ( int indelIndexj = indelIndex+1; indelIndexj < allInsertionArrayLists.get(key).size(); indelIndexj++){
+						int start2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart();
+						int length2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart() + Math.abs(allInsertionArrayLists.get(key).get(indelIndex).getLength());
+						if (start2 == start1){
+							ifThereOverlap = true;
+							allLengths.add(length2);
+							overlappedInsertation.add(allInsertionArrayLists.get(key).get(indelIndexj));
+						}else{
+							Collections.sort(allLengths);
+							for ( int breakpoint_index = 0 ; breakpoint_index < (allLengths.size()-1); breakpoint_index++ ) {
+								int newStart = start1;
+								int length = allLengths.get(breakpoint_index);
+								Indel indel = new Indel(newStart, length, key);
+								for ( Indel oi : overlappedInsertation ){
+									if( oi.getLength() >= length ){
+										indel.getOverlapedIndles().add(oi);
+									}
+								}
+								newIndelList.add(indel);
+							}
+							indelIndex = indelIndexj - 1;
+							break; // jump out of this for loop
+						}
+					}
+				}
+				Collections.sort( newIndelList );
+				allDeletionArrayLists.put(key, newIndelList);
+			}
 		}
 		// insertion end
 
@@ -256,12 +263,8 @@ public class SdiIndelToPedWithDecomposition {
 
 		for( String key : allDeletionArrayLists.keySet() ){
 			allIndelArrayLists.put(key, new ArrayList<Indel>());
-			for( Indel indel : allDeletionArrayLists.get(key) ){
-				allIndelArrayLists.get(key).add(indel);
-			}
-			for( Indel indel : allInsertionArrayLists.get(key) ){
-				allIndelArrayLists.get(key).add(indel);
-			}
+			allIndelArrayLists.get(key).addAll(allDeletionArrayLists.get(key));
+			allIndelArrayLists.get(key).addAll(allInsertionArrayLists.get(key));
 			Collections.sort(allIndelArrayLists.get(key));
 		}
 
@@ -302,8 +305,8 @@ public class SdiIndelToPedWithDecomposition {
 				}
 			}
 			pedOutPut.println();
-			PrintWriter outPut2 = new PrintWriter("./indel.map");
-			PrintWriter outPut3 = new PrintWriter("./indel_own.map");
+			PrintWriter outPut2 = new PrintWriter("./SdiIndelToPedWithDecomposition.map");
+			PrintWriter outPut3 = new PrintWriter("./SdiIndelToPedWithDecomposition_own.map");
 			outPut3.println("chrName\tindelid\tstart\tlength");
 			for( String key : chrArrayList ){
 				for( Indel indel : allIndelArrayLists.get(key) ){
@@ -323,7 +326,7 @@ public class SdiIndelToPedWithDecomposition {
 	class PedOutPut{
 		private PrintWriter outPut;
 		public PedOutPut() throws FileNotFoundException{
-			outPut = new PrintWriter("./indel.ped");
+			outPut = new PrintWriter("./SdiIndelToPedWithDecomposition.ped");
 		}
 		public synchronized void print( String content){
 			outPut.print(content); //
@@ -364,17 +367,15 @@ public class SdiIndelToPedWithDecomposition {
 							int code = 1; // no indel
 							for (Indel ovIndel: indel.getOverlapedIndles()){
 								if( accession.getDeletionsMap().get(key).contains(ovIndel) ){
-									content.append("  2 2"); // indeled
+									code = 2; // indeled
 								}
 							}
 							content.append("  " + code + " " + code); // not indeled
 						}else{// insertations
 							int code = 1; // no indel
-							for ( Indel i : accession.getInsertationsMap().get(key) ){
-								if ( i.getStart() == indel.getStart() ){
-									code = 2; // indel
-								}else if( i.getStart() > indel.getStart() ){
-									break;
+							for (Indel ovIndel: indel.getOverlapedIndles()){
+								if( accession.getInsertationsMap().get(key).contains(ovIndel) ){
+									code = 2;
 								}
 							}
 							content.append("  " + code + " " + code); // not indeled

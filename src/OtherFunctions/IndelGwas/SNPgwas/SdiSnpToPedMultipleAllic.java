@@ -174,8 +174,7 @@ public class SdiSnpToPedMultipleAllic{
 					markerPostion.setColNaChar(refNaChar);
 				}
 			}
-		}
-		// for all the SNP position find the allele of reference genome end
+		} // for all the SNP position find the allele of reference genome end
 		
 		int no_bw_submitted=0;
 		HashMap<String, HashMap<MarkerPostion, Character>> markerPostionAccessionsHashMap = new HashMap<String, HashMap<MarkerPostion, Character>>();
@@ -244,13 +243,11 @@ public class SdiSnpToPedMultipleAllic{
 		ArrayList<MarkerPostion> markerPostionAs = new ArrayList<MarkerPostion>();
 		for( String key : markerPostionsMap.keySet() ){
 			MarkerPostionS markerPostions = markerPostionsMap.get(key);
-			for( MarkerPostion markerPostion : markerPostions.getMarkerPostions() ){
-				markerPostionAs.add(markerPostion);
-			}
+			markerPostionAs.addAll( markerPostions.getMarkerPostions());
 		}
 
 		Collections.sort(markerPostionAs);
-		PrintWriter outPut = new PrintWriter("snp.ped");		
+		PrintWriter outPut = new PrintWriter("sdi_multi_allic_snp.ped");
 		for( String accessionName : markerPostionAccessionsHashMap.keySet() ){
 			String accessionName2=accessionName;
 			accessionName2=accessionName2.replaceAll("\\.SDI", "");
@@ -276,7 +273,7 @@ public class SdiSnpToPedMultipleAllic{
 					outPut.print("	5 5");
 				}else if ( theChar == '+' ){ // reverse or some other replacement
 					outPut.print("	6 6");
-				}else if( theChar == 'N' ){
+				}else if( theChar == 'N' ){ // low coverage
 					outPut.print("	7 7");
 				}else {
 					outPut.print("	0 0");// missing value
@@ -302,7 +299,7 @@ public class SdiSnpToPedMultipleAllic{
 		}
 		outPut.print("\n");
 		outPut.close();
-		PrintWriter outPutIDMap = new PrintWriter("snp.map");
+		PrintWriter outPutIDMap = new PrintWriter("sdi_multi_allic_snp.map");
 		for( int i =0; i < markerPostionAs.size(); i++ ){
 			MarkerPostion markerPostion = markerPostionAs.get(i);
 			String chrname = markerPostion.getChrName();
@@ -373,13 +370,13 @@ class SdiSnpToPedMultipleAllicMultipleThread  extends Thread{
 //								}
 //							}
 						}
-					}else{ // this is added after generating public result begin
+					}else{
 						if( thisTranscriptIsReliable ){ // same with reference
 
 						}else{
 							markerPostionHashMap.put(markerPostion, 'N'); // low coverage
 						}
-					}// this is added after generating public result end
+					}
 					if ( !thisTranscriptIsReliable && mapSingleRecords.size()==1 ){ // if there is no reads and there is only a insertion records, this position is encoded as missing
 						for( MapSingleRecord mapSingleRecord : mapSingleRecords ) {
 							if ( mapSingleRecord.getBasement() <= markerPostion.getPosition() && mapSingleRecord.getChanged()>0 && mapSingleRecord.getOriginal().contains("-") ){

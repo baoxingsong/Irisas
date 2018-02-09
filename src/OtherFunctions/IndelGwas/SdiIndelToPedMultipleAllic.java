@@ -119,30 +119,31 @@ public class SdiIndelToPedMultipleAllic {
 		System.out.println("sdi read end " + allIndels.size());
 		
 		
-		HashMap<String, ArrayList<Indel>> allIndelArrayLists = new HashMap<String, ArrayList<Indel>>();
+		HashMap<String, ArrayList<Indel>> allIndelArrayLists = new HashMap<String, ArrayList<Indel>>(); // hash to array for sorting purpose
+
 		ArrayList<String> chrArrayList = new ArrayList<String>();
-		
 		for( String key : allIndels.keySet() ){
-			for( Indel indel : allIndels.get(key) ){
-				if( allIndelArrayLists.containsKey(key) ){
-					
-				}else{
-					chrArrayList.add(key);
-					allIndelArrayLists.put(key, new ArrayList<Indel>());
-				}
-				allIndelArrayLists.get(key).add(indel);
+			if( allIndelArrayLists.containsKey(key) ){
+
+			}else{
+				chrArrayList.add(key);
+				allIndelArrayLists.put(key, new ArrayList<Indel>());
 			}
-		}
-		
-		for( String key : allIndelArrayLists.keySet() ){
+			allIndelArrayLists.get(key).addAll(allIndels.get(key) );
 			Collections.sort(allIndelArrayLists.get(key));
 		}
-		
+
 		for( String key : allIndelArrayLists.keySet() ){
 			for( int i=0; i<allIndelArrayLists.get(key).size();i++ ){
 				//System.out.println("i "+i);
 				Indel indel = allIndelArrayLists.get(key).get(i);
-				int end = indel.getStart()+Math.abs(indel.getLength());
+				int end;
+				if(indel.getLength() < 0){
+					end = indel.getStart()+Math.abs(indel.getLength());
+				}else{
+					end = indel.getStart();
+				}
+
 				for( int j=i+1; j<allIndelArrayLists.get(key).size();j++ ){
 					Indel indel2 = allIndelArrayLists.get(key).get(j);
 					if(indel.overlap(indel2)){
@@ -157,66 +158,66 @@ public class SdiIndelToPedMultipleAllic {
 		}
 		
 		System.out.println("begin to output");
-			try {
-				PedOutPut pedOutPut = new PedOutPut();
-				
-				MyThreadCount threadCount = new MyThreadCount(0);
-				for(String accessionName : accessionNames){
-					Accession accession = allAccessions.get(accessionName);
-					boolean isThisThreadUnrun=true;
-					while(isThisThreadUnrun){
-						if(threadCount.getCount() < threadNumber){
-			            	threadCount.plusOne();
-			            	OrginizeThisAccession main = new OrginizeThisAccession(accession, allIndelArrayLists, pedOutPut, chrArrayList, threadCount);
-			            	main.start();
-			                isThisThreadUnrun=false;
-			            }else{
-			            	try {
-			    				Thread.sleep(1);
-			    			} catch (InterruptedException e) {
-			    				e.printStackTrace();
-			    			}
-			            }
+
+		try {
+			PedOutPut pedOutPut = new PedOutPut();
+			MyThreadCount threadCount = new MyThreadCount(0);
+			for(String accessionName : accessionNames){
+				Accession accession = allAccessions.get(accessionName);
+				boolean isThisThreadUnrun=true;
+				while(isThisThreadUnrun){
+					if(threadCount.getCount() < threadNumber){
+						threadCount.plusOne();
+						OrginizeThisAccession main = new OrginizeThisAccession(accession, allIndelArrayLists, pedOutPut, chrArrayList, threadCount);
+						main.start();
+						isThisThreadUnrun=false;
+					}else{
+						try {
+							Thread.sleep(1);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 					}
 				}
-				while(threadCount.hasNext()){// wait for all the thread
-					try {
-						Thread.sleep(1);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-				
-				pedOutPut.print("ref" + " " + "ref" + " 0 0 1	1");
-				for( String key : chrArrayList ){
-					for( Indel indel : allIndelArrayLists.get(key) ){
-						pedOutPut.print("  1 1"); // not indeled
-					}
-				}
-				pedOutPut.println();
-				
-				PrintWriter outPut2 = new PrintWriter("./indel.map");
-				PrintWriter outPut3 = new PrintWriter("./indel_own.map");
-				outPut3.println("chrName\tindelid\tstart\tlength");
-				for( String key : chrArrayList ){
-					for( Indel indel : allIndelArrayLists.get(key) ){
-						String chrName = indel.getChrName();
-						chrName = chrName.replace("Chr", "");
-						outPut2.println(chrName + "\tindel_"+indel.getChrName()+"_" + indel.getStart()+"_"+indel.getLength() + "\t0\t" + indel.getStart());
-						outPut3.println(chrName + "\tindel_"+indel.getChrName()+"_" + indel.getStart()+"_"+indel.getLength() + "\t" + indel.getStart()+"\t"+indel.getLength());
-					}
-				}
-				outPut2.close();
-				outPut3.close();
-				pedOutPut.close();
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
 			}
+			while(threadCount.hasNext()){// wait for all the thread
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+
+			pedOutPut.print("ref" + " " + "ref" + " 0 0 1	1");
+			for( String key : chrArrayList ){
+				for( Indel indel : allIndelArrayLists.get(key) ){
+					pedOutPut.print("  1 1"); // not indeled
+				}
+			}
+			pedOutPut.println();
+
+			PrintWriter outPut2 = new PrintWriter("./sdi_multi_allic_indel.map");
+			PrintWriter outPut3 = new PrintWriter("./sdi_multi_allic_indel_own.map");
+			outPut3.println("chrName\tindelid\tstart\tlength");
+			for( String key : chrArrayList ){
+				for( Indel indel : allIndelArrayLists.get(key) ){
+					String chrName = indel.getChrName();
+					chrName = chrName.replace("Chr", "");
+					outPut2.println(chrName + "\tindel_"+indel.getChrName()+"_" + indel.getStart()+"_"+indel.getLength() + "\t0\t" + indel.getStart());
+					outPut3.println(chrName + "\tindel_"+indel.getChrName()+"_" + indel.getStart()+"_"+indel.getLength() + "\t" + indel.getStart()+"\t"+indel.getLength());
+				}
+			}
+			outPut2.close();
+			outPut3.close();
+			pedOutPut.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 	class PedOutPut{
 		private PrintWriter outPut;
 		public PedOutPut() throws FileNotFoundException{
-			outPut = new PrintWriter("./indel.ped");
+			outPut = new PrintWriter("./sdi_multi_allic_indel.ped");
 		}
 		public synchronized void print( String content){
 			outPut.print(content); //
@@ -389,19 +390,27 @@ public class SdiIndelToPedMultipleAllic {
 		public boolean overlap(Indel indel) {
 			if( this.chrName.equals(indel.getChrName()) ){
 				int start1 = indel.getStart();
+				int end1;
+				if( indel.getLength()>0 ){
+					end1 = start1;
+				}else{
+					end1 = start - indel.getLength();
+				}
 				int start2 = this.getStart();
-				if( start1 == start2 ){ // for insertion, only with same start, they are overlap with each other
+				int end2;
+				if (this.getLength()>0) {
+					end2 = start2;
+				} else {
+					end2 = start2 - this.getLength();
+				}
+
+				if ( start1 > end2  ){
+					return false;
+				} else if ( start2 > end1 ){
+					return false;
+				}else if ( (start1 >= start2 && start1 <= end2) || (end1 >= start2 && end1 <= end2)
+						|| (start2 >= start1 && start2 <= end1) || (end2 >= start1 && end2 <= end1) ){
 					return true;
-				}else if( indel.getLength()<0 && this.getLength()<0 ){
-					int end1 = indel.getStart() + Math.abs(indel.getLength());
-					int end2 = this.getStart() + Math.abs(this.getLength());
-					if( start1 > start2 && start1 >end2 ){
-						return false;
-					}else if( start2 > start1 && start2 >end1 ){
-						
-					} else if( (start1 <= start2 && start2 <= end1) || (start1 <= end2 && end2 <= end1) || (start2 <= start1 && start1 <= end2) || (start2 <= end1 && end1 <= end2) ){
-						return true;
-					}
 				}else{
 					return false;
 				}
