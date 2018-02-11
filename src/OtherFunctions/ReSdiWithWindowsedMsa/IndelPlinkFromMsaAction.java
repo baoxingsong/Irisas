@@ -249,8 +249,8 @@ public class IndelPlinkFromMsaAction {
 				for ( String ni: lastEnds.keySet() ){
 				    System.out.println("line 250 " + ni + "\t" + lastEnds.get(ni));
                 }
-				for( String name : names ){
 
+				for( String name : names ){
 				    int this_name_chr_length;
 				    if (chrLengths.containsKey(name)) {
 				        this_name_chr_length = chrLengths.get(name);
