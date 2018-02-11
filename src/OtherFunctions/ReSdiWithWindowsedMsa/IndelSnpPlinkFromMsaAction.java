@@ -50,6 +50,7 @@ public class IndelSnpPlinkFromMsaAction {
 				}else{
 					try {
 						Process p = new ProcessBuilder("samtools faidx " + fastaPath).start();
+                        p.waitFor();
 					}catch (final Exception e) {
 						System.err.print("genome sequence index file could not be created");
 						e.printStackTrace();
@@ -279,7 +280,7 @@ public class IndelSnpPlinkFromMsaAction {
 				for(String name : names) {
 					BufferedReader reader = new BufferedReader(new FileReader(genomeFolder + File.separator + name + ".fa.fai"));
 					String tempString = null;
-					Pattern p = Pattern.compile(chrName+"\\s+(\\d+)\\s");
+					Pattern p = Pattern.compile("^"+chrName+"\\s+(\\d+)\\s");
 					while ((tempString = reader.readLine()) != null) {
 						Matcher m = p.matcher(tempString);
 						if (m.find()) {
@@ -296,7 +297,6 @@ public class IndelSnpPlinkFromMsaAction {
                     }else{
 				        this_name_chr_length = lastEnds.get(name);
                     }
-
                     if ( this_name_chr_length > lastEnds.get(name) ){
                         int boundary_indel_length = this_name_chr_length - lastEnds.get(name) + 1; // because 1 means equal, so we plus 1 here
                         outTped.print(" " + boundary_indel_length + " " + boundary_indel_length);
