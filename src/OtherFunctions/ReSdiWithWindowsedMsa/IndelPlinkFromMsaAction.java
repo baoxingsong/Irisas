@@ -148,20 +148,18 @@ public class IndelPlinkFromMsaAction {
 								}
 							}
 							int largerEnd;
-							if( targetTranscriptEnd > lastEnds.get(name) ){
+							if ( targetTranscriptEnd > lastEnds.get(name) ) {
 								largerEnd = targetTranscriptEnd;
-							}else{
+							} else {
 								largerEnd = lastEnds.get(name);
 							}
-                            System.out.println("156 " + name + "\t" + targetTranscriptEnd);
 							lastEnds.put(name, largerEnd);
-						}else{
-                            System.out.println("159 " + name + "\t" + targetTranscriptEnd);
+						} else {
 							lastEnds.put(name, targetTranscriptEnd);
 						} // solve boundary problem by adapting the result of previous window end
 
 						index_i ++;
-					}// prepare sequences matrix end
+					} // prepare sequences matrix end
 
 					// output boundary indels begin
 					outTped.print(chrNameSimple+" "+ chrNameSimple+"_"+transcriptStart+"_b 0 "+transcriptStart);
@@ -247,7 +245,11 @@ public class IndelPlinkFromMsaAction {
 					}
 				}
                 outTped.print(chrNameSimple + " " + chrNameSimple + "_" + chrLengths.get(refName)+"_end" + " 0 " + chrLengths.get(refName));
-                for( String name : names ){
+
+				for ( String ni: lastEnds.keySet() ){
+				    System.out.println("line 250 " + ni + "\t" + lastEnds.get(ni));
+                }
+				for( String name : names ){
 
 				    int this_name_chr_length;
 				    if (chrLengths.containsKey(name)) {
