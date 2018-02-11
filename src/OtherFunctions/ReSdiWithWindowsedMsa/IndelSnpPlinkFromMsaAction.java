@@ -139,7 +139,6 @@ public class IndelSnpPlinkFromMsaAction {
 							}
 							if ((msaRefStart + refLetterNumber - 1) == transcriptEnd && refMsaSingleRecord.getSequence().charAt(ai) != '-') {
 								targetTranscriptEnd = msaTargetStart + targetLetterNumber - 1;
-								System.out.println("142 " + targetTranscriptEnd);
 							}
 							if (transcriptStart <= (msaRefStart + refLetterNumber - 1) && (msaRefStart + refLetterNumber - 1) < transcriptEnd) {
 								sequences[index_j][index_i] = targetMsaSingleRecord.getSequence().charAt(ai);
