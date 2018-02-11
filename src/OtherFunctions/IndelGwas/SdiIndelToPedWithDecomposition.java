@@ -140,7 +140,7 @@ public class SdiIndelToPedWithDecomposition {
 		}
 
 		// decompose all the overlapped deletions in a region
-		for( String key : allDeletions.keySet() ){// here the key is chromosome
+		for( String key : allDeletions.keySet() ){ // here the key is chromosome
 			System.out.println("doing deletion decomposition for " + key);
 			Collections.sort(allDeletionArrayLists.get(key)); // sort them
 			ArrayList<Indel> newIndelList =new ArrayList<Indel>();
@@ -210,10 +210,8 @@ public class SdiIndelToPedWithDecomposition {
 		}// decompose all the overlapped INDELs in a region
 
 		for( String key : allDeletions.keySet() ){
+            System.out.println("doing insertion decomposition for " + key);
 			Collections.sort(allInsertionArrayLists.get(key));
-			boolean ifThereOverlap = true;
-			while( ifThereOverlap ){
-				ifThereOverlap = false;
 				ArrayList<Indel> newIndelList =new ArrayList<Indel>();
 				for( int indelIndex = 0; indelIndex < allInsertionArrayLists.get(key).size(); indelIndex++ ){
 					ArrayList<Integer> allLengths = new ArrayList<Integer>();
@@ -227,7 +225,6 @@ public class SdiIndelToPedWithDecomposition {
 						int start2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart();
 						int length2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart() + Math.abs(allInsertionArrayLists.get(key).get(indelIndex).getLength());
 						if (start2 == start1){
-							ifThereOverlap = true;
 							allLengths.add(length2);
 							overlappedInsertation.add(allInsertionArrayLists.get(key).get(indelIndexj));
 						}else{
@@ -250,7 +247,7 @@ public class SdiIndelToPedWithDecomposition {
 				}
 				Collections.sort( newIndelList );
 				allDeletionArrayLists.put(key, newIndelList);
-			}
+
 		}
 		// insertion end
 		System.out.println("insertion decomposition done");
