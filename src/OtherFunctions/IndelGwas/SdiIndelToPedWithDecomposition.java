@@ -89,7 +89,7 @@ public class SdiIndelToPedWithDecomposition {
 			e1.printStackTrace();
 		}
 
-		// read all the sdi files and get all the possiable INDEL records
+		// read all the sdi files and get all the possible INDEL records
 		for(String accessionId : accessionNames){
 			try {
 				Accession accession = new Accession(accessionId);
@@ -127,7 +127,6 @@ public class SdiIndelToPedWithDecomposition {
 		System.out.println("sdi files reading end");
 		ArrayList<String> chrArrayList = new ArrayList<String>();
 
-
 		// deletion begin
 		HashMap<String, ArrayList<Indel>> allDeletionArrayLists = new HashMap<String, ArrayList<Indel>>();
 		for( String key : allDeletions.keySet() ){
@@ -139,15 +138,17 @@ public class SdiIndelToPedWithDecomposition {
 			}
 			allDeletionArrayLists.get(key).addAll(allDeletions.get(key));
 		}
+
 		// decompose all the overlapped deletions in a region
-		for( String key : allDeletions.keySet() ){
-			Collections.sort(allDeletionArrayLists.get(key));
+		for( String key : allDeletions.keySet() ){// here the key is chromosome
 			boolean ifThereOverlap = true;
 			while( ifThereOverlap ){
+				System.out.println("doing deletion decomposition for " + key);
+				Collections.sort(allDeletionArrayLists.get(key)); // sort them
 				ifThereOverlap = false;
 				ArrayList<Indel> newIndelList =new ArrayList<Indel>();
 				for( int indelIndex = 0; indelIndex < allDeletionArrayLists.get(key).size(); indelIndex++ ){
-					ArrayList<Integer> allBreakPoints = new ArrayList<Integer>();
+					HashSet<Integer> allBreakPoints = new HashSet<Integer>();
 					int start1 = allDeletionArrayLists.get(key).get(indelIndex).getStart();
 					int end1 = allDeletionArrayLists.get(key).get(indelIndex).getStart() - allDeletionArrayLists.get(key).get(indelIndex).getLength();
 					int theCurrentLargestEnd = end1;
@@ -157,10 +158,12 @@ public class SdiIndelToPedWithDecomposition {
 						int start2 = allDeletionArrayLists.get(key).get(indelIndexj).getStart();
 						int end2 = allDeletionArrayLists.get(key).get(indelIndexj).getStart() - allDeletionArrayLists.get(key).get(indelIndex).getLength();
 						if (start2 >= theCurrentLargestEnd) {  // could be equal here
-							Collections.sort(allBreakPoints);
-							for ( int breakpoint_index = 0 ; breakpoint_index < (allBreakPoints.size()-1); breakpoint_index++ ) {
-								int newStart = allBreakPoints.get(breakpoint_index);
-								int length = allBreakPoints.get(breakpoint_index) - allBreakPoints.get(breakpoint_index + 1);
+							ArrayList<Integer> allBreakPoints_2 = new ArrayList<Integer>();
+							allBreakPoints_2.addAll(allBreakPoints);// HashSet to ArrayList
+							Collections.sort(allBreakPoints_2);
+							for ( int breakpoint_index = 0 ; breakpoint_index < (allBreakPoints_2.size()-1); breakpoint_index++ ) {
+								int newStart = allBreakPoints_2.get(breakpoint_index);
+								int length = allBreakPoints_2.get(breakpoint_index) - allBreakPoints_2.get(breakpoint_index + 1);
 								if( length != 0 ){
 									Indel indel = new Indel(newStart, length, key);
 									newIndelList.add(indel);
@@ -198,7 +201,7 @@ public class SdiIndelToPedWithDecomposition {
 			//check overlap end
 		}
 		// deletion end
-
+		System.out.println("deletion decomposition done");
 
 		// insertion begin
 		HashMap<String, ArrayList<Indel>> allInsertionArrayLists = new HashMap<String, ArrayList<Indel>>();
@@ -255,7 +258,7 @@ public class SdiIndelToPedWithDecomposition {
 			}
 		}
 		// insertion end
-
+		System.out.println("insertion decomposition done");
 
 
 
@@ -554,10 +557,9 @@ public class SdiIndelToPedWithDecomposition {
 			}*/
 			if( thisChrName.equalsIgnoreCase(indelChrName) ){
 				return this.getStart() - indel.getStart();
-			}else if( this.getStart() != indel.getStart()){
+			}else{
 				return thisChrName.compareToIgnoreCase(indelChrName);
 			}
-			return 0;
 		}
 		private HashSet<Indel> overlapedIndles = new HashSet<Indel>();
 		public HashSet<Indel> getOverlapedIndles() {
