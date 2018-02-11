@@ -156,6 +156,7 @@ public class IndelPlinkFromMsaAction {
                             System.out.println("156 " + largerEnd);
 							lastEnds.put(name, largerEnd);
 						}else{
+                            System.out.println("159 " + targetTranscriptEnd);
 							lastEnds.put(name, targetTranscriptEnd);
 						} // solve boundary problem by adapting the result of previous window end
 
