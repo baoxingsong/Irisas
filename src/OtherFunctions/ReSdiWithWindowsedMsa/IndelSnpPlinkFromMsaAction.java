@@ -73,6 +73,22 @@ public class IndelSnpPlinkFromMsaAction {
 			HashSet<String> names_set = new HashSet<String>();
 			names_set.addAll(names);
 			for(String chrName : msaFileLocationsHashmap.keySet()){
+
+                HashMap<String, Integer> chrLengths = new  HashMap<String, Integer>();
+                // the part after last window begin
+                for(String name : names) {
+                    BufferedReader reader = new BufferedReader(new FileReader(genomeFolder + File.separator + name + ".fa.fai"));
+                    String tempString = null;
+                    Pattern p = Pattern.compile(chrName+"\\s+(\\d+)\\s");
+                    while ((tempString = reader.readLine()) != null) {
+                        Matcher m = p.matcher(tempString);
+                        if (m.find()) {
+                            int this_name_chr_length = Integer.parseInt(m.group(1));
+                            chrLengths.put(name, this_name_chr_length);
+                        }
+                    }
+                }
+
 				String chrNameSimple = chrName;
 				chrNameSimple = chrNameSimple.replace("Chr", "");
 
@@ -84,7 +100,10 @@ public class IndelSnpPlinkFromMsaAction {
 					lastEnds.put(name, 0); // initialize all the values with 0
 				}
 
-				for( MsaFile msaFile : msaFileLocations){
+                int msaFile_index = 0;
+                for( MsaFile msaFile : msaFileLocations){
+                    msaFile_index++;
+
 					String msaFileLocation = msaFile.getFilePath();
 					MsaFileRecord msaFileRecord = new MsaFileReadImpl(msaFileLocation, names_set).getMsaFileRecord();
 
@@ -148,6 +167,16 @@ public class IndelSnpPlinkFromMsaAction {
                                 index_j++;
 							}
 						}
+
+                        if( (msaFile_index == (msaFileLocations.size())) && targetTranscriptEnd == 0 ){
+                            if( chrLengths.containsKey(chrName) ){
+                                targetTranscriptEnd = chrLengths.get(chrName);
+                            }else{
+                                System.err.println("There is something wrong to get the chromosome length information. " +
+                                        "But it would not affect the final result a lot.");
+                                targetTranscriptEnd = lastEnds.get(name);
+                            }
+                        }
 
 						boundary_indels.put(name, targetTranscriptStart - lastEnds.get(name) );
 
@@ -275,20 +304,7 @@ public class IndelSnpPlinkFromMsaAction {
 					// output matrix end
 				}
 
-                HashMap<String, Integer> chrLengths = new  HashMap<String, Integer>();
-				// the part after last window begin
-				for(String name : names) {
-					BufferedReader reader = new BufferedReader(new FileReader(genomeFolder + File.separator + name + ".fa.fai"));
-					String tempString = null;
-					Pattern p = Pattern.compile("^"+chrName+"\\s+(\\d+)\\s");
-					while ((tempString = reader.readLine()) != null) {
-						Matcher m = p.matcher(tempString);
-						if (m.find()) {
-							int this_name_chr_length = Integer.parseInt(m.group(1));
-                            chrLengths.put(name, this_name_chr_length);
-						}
-					}
-				}
+
                 outTped.print(chrNameSimple + " " + chrNameSimple + "_" + chrLengths.get(refName)+"_end" + " 0 " + chrLengths.get(refName));
                 for( String name : names ){
 				    int this_name_chr_length;
