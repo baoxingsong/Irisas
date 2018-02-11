@@ -152,8 +152,8 @@ public class IndelPlinkFromMsaAction {
 						}
 
 						if( (msaFile_index == (msaFileLocations.size())) && targetTranscriptEnd == 0 ){
-						    if( chrLengths.containsKey(chrName) ){
-                                targetTranscriptEnd = chrLengths.get(chrName);
+						    if( chrLengths.containsKey(name) ){
+                                targetTranscriptEnd = chrLengths.get(name);
                             }else{
 						        System.err.println("There is something wrong to get the chromosome length information. " +
                                         "But it would not affect the final result a lot.");
