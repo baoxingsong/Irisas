@@ -141,49 +141,44 @@ public class SdiIndelToPedWithDecomposition {
 
 		// decompose all the overlapped deletions in a region
 		for( String key : allDeletions.keySet() ){// here the key is chromosome
-			boolean ifThereOverlap = true;
-			while( ifThereOverlap ){
-				System.out.println("doing deletion decomposition for " + key);
-				Collections.sort(allDeletionArrayLists.get(key)); // sort them
-				ifThereOverlap = false;
-				ArrayList<Indel> newIndelList =new ArrayList<Indel>();
-				for( int indelIndex = 0; indelIndex < allDeletionArrayLists.get(key).size(); indelIndex++ ){
-					HashSet<Integer> allBreakPoints = new HashSet<Integer>();
-					int start1 = allDeletionArrayLists.get(key).get(indelIndex).getStart();
-					int end1 = allDeletionArrayLists.get(key).get(indelIndex).getStart() - allDeletionArrayLists.get(key).get(indelIndex).getLength();
-					int theCurrentLargestEnd = end1;
-					allBreakPoints.add(start1);
-					allBreakPoints.add(end1);
-					for ( int indelIndexj = indelIndex+1; indelIndexj < allDeletionArrayLists.get(key).size(); indelIndexj++){
-						int start2 = allDeletionArrayLists.get(key).get(indelIndexj).getStart();
-						int end2 = allDeletionArrayLists.get(key).get(indelIndexj).getStart() - allDeletionArrayLists.get(key).get(indelIndex).getLength();
-						if (start2 >= theCurrentLargestEnd) {  // could be equal here
-							ArrayList<Integer> allBreakPoints_2 = new ArrayList<Integer>();
-							allBreakPoints_2.addAll(allBreakPoints);// HashSet to ArrayList
-							Collections.sort(allBreakPoints_2);
-							for ( int breakpoint_index = 0 ; breakpoint_index < (allBreakPoints_2.size()-1); breakpoint_index++ ) {
-								int newStart = allBreakPoints_2.get(breakpoint_index);
-								int length = allBreakPoints_2.get(breakpoint_index) - allBreakPoints_2.get(breakpoint_index + 1);
-								if( length != 0 ){
-									Indel indel = new Indel(newStart, length, key);
-									newIndelList.add(indel);
-								}
+			System.out.println("doing deletion decomposition for " + key);
+			Collections.sort(allDeletionArrayLists.get(key)); // sort them
+			ArrayList<Indel> newIndelList =new ArrayList<Indel>();
+			for( int indelIndex = 0; indelIndex < allDeletionArrayLists.get(key).size(); indelIndex++ ){
+				HashSet<Integer> allBreakPoints = new HashSet<Integer>();
+				int start1 = allDeletionArrayLists.get(key).get(indelIndex).getStart();
+				int end1 = allDeletionArrayLists.get(key).get(indelIndex).getStart() - allDeletionArrayLists.get(key).get(indelIndex).getLength();
+				int theCurrentLargestEnd = end1;
+				allBreakPoints.add(start1);
+				allBreakPoints.add(end1);
+				for ( int indelIndexj = indelIndex+1; indelIndexj < allDeletionArrayLists.get(key).size(); indelIndexj++){
+					int start2 = allDeletionArrayLists.get(key).get(indelIndexj).getStart();
+					int end2 = allDeletionArrayLists.get(key).get(indelIndexj).getStart() - allDeletionArrayLists.get(key).get(indelIndex).getLength();
+					if (start2 >= theCurrentLargestEnd) {  // could be equal here
+						ArrayList<Integer> allBreakPoints_2 = new ArrayList<Integer>();
+						allBreakPoints_2.addAll(allBreakPoints);// HashSet to ArrayList
+						Collections.sort(allBreakPoints_2);
+						for ( int breakpoint_index = 0 ; breakpoint_index < (allBreakPoints_2.size()-1); breakpoint_index++ ) {
+							int newStart = allBreakPoints_2.get(breakpoint_index);
+							int length = allBreakPoints_2.get(breakpoint_index) - allBreakPoints_2.get(breakpoint_index + 1);
+							if( length != 0 ){
+								Indel indel = new Indel(newStart, length, key);
+								newIndelList.add(indel);
 							}
-							indelIndex = indelIndexj - 1;
-							break; // jump out of this for loop
-						}else{
-							ifThereOverlap = true;
-							if( end2 > theCurrentLargestEnd ){
-								theCurrentLargestEnd = end2;
-							}
-							allBreakPoints.add(start2);
-							allBreakPoints.add(end2);
 						}
+						indelIndex = indelIndexj - 1;
+						break; // jump out of this for loop
+					} else {
+						if( end2 > theCurrentLargestEnd ){
+							theCurrentLargestEnd = end2;
+						}
+						allBreakPoints.add(start2);
+						allBreakPoints.add(end2);
 					}
 				}
-				Collections.sort( newIndelList );
-				allDeletionArrayLists.put(key, newIndelList);
 			}
+			Collections.sort( newIndelList );
+			allDeletionArrayLists.put(key, newIndelList);
 
 			//check overlap between the new deletion and old deletion begin
 			for ( Indel del1 : allDeletions.get(key) ){ // this is the dataset before decompose
