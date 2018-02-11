@@ -248,12 +248,12 @@ public class IndelPlinkFromMsaAction {
                 for( String name : names ){
 
 				    int this_name_chr_length;
-				    if (chrLengths.containsKey(name)){
+				    if (chrLengths.containsKey(name)) {
 				        this_name_chr_length = chrLengths.get(name);
-                    }else{
+                    } else {
 				        this_name_chr_length = lastEnds.get(name);
                     }
-                    System.out.print(name + "\t" + chrLengths.get(name) + "\t" + this_name_chr_length);
+                    System.out.println(name + "\t" + chrLengths.get(name) + "\t" + lastEnds.get(name));
                     if ( this_name_chr_length > lastEnds.get(name) ){
                         int boundary_indel_length = this_name_chr_length - lastEnds.get(name) + 1; // because 1 means equal, so we plus 1 here
                         outTped.print(" " + boundary_indel_length + " " + boundary_indel_length);
