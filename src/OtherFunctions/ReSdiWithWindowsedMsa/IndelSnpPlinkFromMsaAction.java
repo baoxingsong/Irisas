@@ -244,7 +244,7 @@ public class IndelSnpPlinkFromMsaAction {
                                     if( thisCol_seq.equalsIgnoreCase(lastCol_seq) ) { // if the INDEL state of this one is same with last one
                                         lastLength++;
                                     }else { // if the INDEL state of this one is different with last one, then output
-										int outPosition = transcriptStart+ref_seq_index;
+										int outPosition = transcriptStart+ref_seq_index-1;
                                         outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + outPosition);
                                         for (int name_index = 0; name_index < names.size(); name_index++) {
                                             char code = lastCol_seq.charAt(name_index);
@@ -261,7 +261,7 @@ public class IndelSnpPlinkFromMsaAction {
                                 }
                             } else {
 						        if ( lastLength > 0 ){ // last one/several contains only INDEL, this one changed, then try to output
-									int outPosition = transcriptStart+ref_seq_index;
+									int outPosition = transcriptStart+ref_seq_index-1;
                                     outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + outPosition);
                                     for (int name_index = 0; name_index < names.size(); name_index++) {
                                         char code = lastCol_seq.charAt(name_index);
@@ -273,7 +273,7 @@ public class IndelSnpPlinkFromMsaAction {
                                     lastCol_seq="";
                                 }
                                 // output this genotype begin
-								int outPosition = transcriptStart+ref_seq_index;
+								int outPosition = transcriptStart+ref_seq_index-1;
                                 outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + " 0 " + outPosition);
                                 for (int name_index = 0; name_index < names.size(); name_index++) {
                                     char this_char = sequences[index_array][name_index];
@@ -289,7 +289,7 @@ public class IndelSnpPlinkFromMsaAction {
                                 // output this genotype end
                             }
 						}else if (lastLength >0) { // if the INDEL state of this one is different with last one, then output
-							int outPosition = transcriptStart+ref_seq_index;
+							int outPosition = transcriptStart+ref_seq_index-1;
                             outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + outPosition);
                             for (int name_index = 0; name_index < names.size(); name_index++) {
                                 char code = lastCol_seq.charAt(name_index);
