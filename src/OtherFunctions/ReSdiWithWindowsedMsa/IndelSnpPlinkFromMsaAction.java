@@ -1,11 +1,17 @@
 package OtherFunctions.ReSdiWithWindowsedMsa;
 
+import edu.unc.genomics.Contig;
+import edu.unc.genomics.io.WigFileException;
+import edu.unc.genomics.io.WigFileFormatException;
+import edu.unc.genomics.io.WigFileReader;
 import me.songbx.impl.MsaFileReadImpl;
 import me.songbx.model.*;
 import me.songbx.service.ChromoSomeReadService;
 import me.songbx.util.MyThreadCount;
 
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,7 +65,19 @@ public class IndelSnpPlinkFromMsaAction {
 				}
 			}
 			// prepare the chromosome length information by creating fasta index file begin
-
+			HashMap<String, WigFileReader> accessionName_WigFileReader_map = new HashMap<String, WigFileReader>();
+			for ( String name : names ) {
+				if( ! name.equalsIgnoreCase(refName) ){
+					String bwFilePosition = genomeFolder + File.separator + name + ".bw";
+					Path bwFile = Paths.get(bwFilePosition);
+					try {
+						WigFileReader wig = WigFileReader.autodetect(bwFile);
+						accessionName_WigFileReader_map.put(name, wig);
+					}catch (WigFileFormatException | IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
             // encode nucleic acids into integer begin
 			outputCode.put('A', 1);
 			outputCode.put('T', 2);
@@ -283,6 +301,19 @@ public class IndelSnpPlinkFromMsaAction {
                                         this_char = sequences[index_array][names.size() - 1]; // get the sequence of reference
                                     }
                                     int code = getDnaCode(this_char);
+                                    if ( sequences[index_array][names.size() - 1] != '-' ) { // the reference is not deletion
+										if (accessionName_WigFileReader_map.containsKey(names.get(name_index))) { // this is not the reference accession
+											try {
+												Contig result = accessionName_WigFileReader_map.get(names.get(name_index)).query(chrName, outPosition, outPosition);
+												double thisMean = result.mean();
+												if(  Double.isNaN(thisMean) || thisMean<2 ){
+													code = 0; // this is a missing value/low coverage value
+												}
+											}catch (WigFileException e) {
+												e.printStackTrace();
+											}
+										}
+									}
                                     outTped.print(" " + code + " " + code);
                                 }
                                 outTped.println();
