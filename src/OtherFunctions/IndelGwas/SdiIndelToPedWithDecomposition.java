@@ -74,7 +74,7 @@ public class SdiIndelToPedWithDecomposition {
 	public void doit(){
 
 		HashMap<String, Accession> allAccessions = new HashMap<String, Accession>(); // accession name and accession object
-		HashMap<String, HashSet<Indel>> allInsertations = new HashMap<String, HashSet<Indel>>(); // this String is chromosome name
+		HashMap<String, HashSet<Indel>> allInsertions = new HashMap<String, HashSet<Indel>>(); // this String is chromosome name
 		HashMap<String, HashSet<Indel>> allDeletions = new HashMap<String, HashSet<Indel>>(); // this String is chromosome name
 
 		ArrayList<String> accessionNames = new ArrayList<String>();
@@ -101,14 +101,14 @@ public class SdiIndelToPedWithDecomposition {
 	            	if(m2.find()){
 	            		if( !(m2.group(3).equals("0") && m2.group(4).length() == 1) ){
 	            			Indel indel = new Indel( Integer.parseInt(m2.group(2)), Integer.parseInt(m2.group(3)), m2.group(1) );
-	            			if( allInsertations.containsKey(m2.group(1)) ){
+	            			if( allInsertions.containsKey(m2.group(1)) ){
 	            				
 	            			}else{
-								allInsertations.put(m2.group(1), new HashSet<Indel>());
+								allInsertions.put(m2.group(1), new HashSet<Indel>());
 								allDeletions.put(m2.group(1), new HashSet<Indel>());
 	            			}
 	            			if( indel.getLength() > 0 ){
-								allInsertations.get(m2.group(1)).add(indel);
+								allInsertions.get(m2.group(1)).add(indel);
 								accession.addInsertation(indel);
 							}else{
 								allDeletions.get(m2.group(1)).add(indel);
@@ -200,62 +200,59 @@ public class SdiIndelToPedWithDecomposition {
 
 		// insertion begin
 		HashMap<String, ArrayList<Indel>> allInsertionArrayLists = new HashMap<String, ArrayList<Indel>>();
-		for( String key : allInsertations.keySet() ){
+		for( String key : allInsertions.keySet() ){
 			if( allInsertionArrayLists.containsKey(key) ){
 
 			}else{
 				allInsertionArrayLists.put(key, new ArrayList<Indel>());
 			}
-			allInsertionArrayLists.get(key).addAll( allInsertations.get(key));
+			allInsertionArrayLists.get(key).addAll( allInsertions.get(key));
 		}// decompose all the overlapped INDELs in a region
 
-		for( String key : allDeletions.keySet() ){
+		for( String key : allInsertions.keySet() ){
             System.out.println("doing insertion decomposition for " + key);
 			Collections.sort(allInsertionArrayLists.get(key));
-				ArrayList<Indel> newIndelList =new ArrayList<Indel>();
-				for( int indelIndex = 0; indelIndex < allInsertionArrayLists.get(key).size(); indelIndex++ ){
-					ArrayList<Integer> allLengths = new ArrayList<Integer>();
-					int start1 = allInsertionArrayLists.get(key).get(indelIndex).getStart();
-					int length1 = allInsertionArrayLists.get(key).get(indelIndex).getStart() + Math.abs(allInsertionArrayLists.get(key).get(indelIndex).getLength());
-					allLengths.add(length1);
-					HashSet<Indel> overlappedInsertation = new HashSet<Indel>();
-					overlappedInsertation.add(allInsertionArrayLists.get(key).get(indelIndex));
+            ArrayList<Indel> newIndelList =new ArrayList<Indel>();
+            for( int indelIndex = 0; indelIndex < allInsertionArrayLists.get(key).size(); indelIndex++ ){
+                ArrayList<Integer> allLengths = new ArrayList<Integer>();
+                int start1 = allInsertionArrayLists.get(key).get(indelIndex).getStart();
+                int length1 = allInsertionArrayLists.get(key).get(indelIndex).getStart() + Math.abs(allInsertionArrayLists.get(key).get(indelIndex).getLength());
+                allLengths.add(length1);
+                HashSet<Indel> overlappedInsertation = new HashSet<Indel>();
+                overlappedInsertation.add(allInsertionArrayLists.get(key).get(indelIndex));
 
-					for ( int indelIndexj = indelIndex+1; indelIndexj < allInsertionArrayLists.get(key).size(); indelIndexj++){
-						int start2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart();
-						int length2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart() + Math.abs(allInsertionArrayLists.get(key).get(indelIndex).getLength());
-						if (start2 == start1){
-							allLengths.add(length2);
-							overlappedInsertation.add(allInsertionArrayLists.get(key).get(indelIndexj));
-						}else{
-							Collections.sort(allLengths);
-							for ( int breakpoint_index = 0 ; breakpoint_index < (allLengths.size()-1); breakpoint_index++ ) {
-								int newStart = start1;
-								int length = allLengths.get(breakpoint_index);
-								Indel indel = new Indel(newStart, length, key);
-								for ( Indel oi : overlappedInsertation ){
-									if( oi.getLength() >= length ){
-										indel.getOverlapedIndles().add(oi);
-									}
-								}
-								newIndelList.add(indel);
-							}
-							indelIndex = indelIndexj - 1;
-							break; // jump out of this for loop
-						}
-					}
-				}
-				Collections.sort( newIndelList );
-				allDeletionArrayLists.put(key, newIndelList);
-
+                for ( int indelIndexj = indelIndex+1; indelIndexj < allInsertionArrayLists.get(key).size(); indelIndexj++){
+                    int start2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart();
+                    int length2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart() + Math.abs(allInsertionArrayLists.get(key).get(indelIndex).getLength());
+                    if (start2 == start1){
+                        allLengths.add(length2);
+                        overlappedInsertation.add(allInsertionArrayLists.get(key).get(indelIndexj));
+                    }else{
+                        Collections.sort(allLengths);
+                        for ( int breakpoint_index = 0 ; breakpoint_index < (allLengths.size()-1); breakpoint_index++ ) {
+                            int newStart = start1;
+                            int length = allLengths.get(breakpoint_index);
+                            Indel indel = new Indel(newStart, length, key);
+                            for ( Indel oi : overlappedInsertation ){
+                                if( oi.getLength() >= length ){
+                                    indel.getOverlapedIndles().add(oi);
+                                }
+                            }
+                            newIndelList.add(indel);
+                        }
+                        indelIndex = indelIndexj - 1;
+                        break; // jump out of this for loop
+                    }
+                }
+            }
+            Collections.sort( newIndelList );
+            allInsertionArrayLists.put(key, newIndelList);
 		}
 		// insertion end
 		System.out.println("insertion decomposition done");
 
 
-
 		HashMap<String, ArrayList<Indel>> allIndelArrayLists = new HashMap<String, ArrayList<Indel>>();
-
 		for( String key : allDeletionArrayLists.keySet() ){
 			allIndelArrayLists.put(key, new ArrayList<Indel>());
 			allIndelArrayLists.get(key).addAll(allDeletionArrayLists.get(key));
