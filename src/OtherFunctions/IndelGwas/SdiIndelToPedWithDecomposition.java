@@ -347,6 +347,7 @@ public class SdiIndelToPedWithDecomposition {
 			this.threadCount=threadCount;
 			this.chrArrayList=chrArrayList;
 		}
+
 		public void run( ){
 			StringBuffer content = new StringBuffer();
 			String accessionName = accession.getId();

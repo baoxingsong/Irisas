@@ -214,6 +214,7 @@ public class SdiIndelToPedMultipleAllic {
 			e.printStackTrace();
 		}
 	}
+
 	class PedOutPut{
 		private PrintWriter outPut;
 		public PedOutPut() throws FileNotFoundException{
@@ -488,6 +489,3 @@ public class SdiIndelToPedMultipleAllic {
 		}		
 	}
 }
-
-
-
