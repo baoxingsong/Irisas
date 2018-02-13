@@ -295,13 +295,10 @@ public class IndelSnpPlinkFromMsaAction {
                                 outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + " 0 " + outPosition);
                                 for (int name_index = 0; name_index < names.size(); name_index++) {
                                     char this_char = sequences[index_array][name_index];
-                                    if (outputCode.containsKey(this_char)) {
+                                    char ref_char = sequences[index_array][names.size() - 1];
 
-                                    } else { // sign IUPAC code to reference Seq
-                                        this_char = sequences[index_array][names.size() - 1]; // get the sequence of reference
-                                    }
-                                    int code = getDnaCode(this_char);
-                                    if ( sequences[index_array][names.size() - 1] != '-' ) { // the reference is not deletion
+                                    int code = getDnaCode(ref_char);
+                                    if ( sequences[index_array][names.size() - 1] != '-' && this_char == ref_char  ) { // the reference is not deletion
 										if (accessionName_WigFileReader_map.containsKey(names.get(name_index))) { // this is not the reference accession
 											try {
 												Contig result = accessionName_WigFileReader_map.get(names.get(name_index)).query(chrName, outPosition, outPosition);
@@ -313,6 +310,11 @@ public class IndelSnpPlinkFromMsaAction {
 												e.printStackTrace();
 											}
 										}
+									} /*else if (! outputCode.containsKey(this_char) ) {
+                                    	// sign IUPAC code to reference Seq
+										//code = getDnaCode(ref_char);
+									} */else if ( outputCode.containsKey(this_char) ) {
+										code = getDnaCode(this_char);
 									}
                                     outTped.print(" " + code + " " + code);
                                 }
