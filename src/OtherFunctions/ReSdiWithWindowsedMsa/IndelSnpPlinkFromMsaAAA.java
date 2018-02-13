@@ -65,6 +65,7 @@ public class IndelSnpPlinkFromMsaAAA {
         if(cmd.hasOption("t")){
             threadNumber = Integer.parseInt(cmd.getOptionValue("t"));
         }
+        threadNumber--;
         if(cmd.hasOption("i")){
         	msaFolder = cmd.getOptionValue("i");
         }else{

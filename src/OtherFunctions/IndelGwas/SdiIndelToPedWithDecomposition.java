@@ -216,14 +216,14 @@ public class SdiIndelToPedWithDecomposition {
             for( int indelIndex = 0; indelIndex < allInsertionArrayLists.get(key).size(); indelIndex++ ){
                 ArrayList<Integer> allLengths = new ArrayList<Integer>();
                 int start1 = allInsertionArrayLists.get(key).get(indelIndex).getStart();
-                int length1 = allInsertionArrayLists.get(key).get(indelIndex).getStart() + Math.abs(allInsertionArrayLists.get(key).get(indelIndex).getLength());
+                int length1 = allInsertionArrayLists.get(key).get(indelIndex).getLength();
                 allLengths.add(length1);
                 HashSet<Indel> overlappedInsertation = new HashSet<Indel>();
                 overlappedInsertation.add(allInsertionArrayLists.get(key).get(indelIndex));
 
                 for ( int indelIndexj = indelIndex+1; indelIndexj < allInsertionArrayLists.get(key).size(); indelIndexj++){
                     int start2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart();
-                    int length2 = allInsertionArrayLists.get(key).get(indelIndexj).getStart() + Math.abs(allInsertionArrayLists.get(key).get(indelIndex).getLength());
+                    int length2 = allInsertionArrayLists.get(key).get(indelIndex).getLength();
                     if (start2 == start1){
                         allLengths.add(length2);
                         overlappedInsertation.add(allInsertionArrayLists.get(key).get(indelIndexj));
@@ -250,7 +250,6 @@ public class SdiIndelToPedWithDecomposition {
 		}
 		// insertion end
 		System.out.println("insertion decomposition done");
-
 
 		HashMap<String, ArrayList<Indel>> allIndelArrayLists = new HashMap<String, ArrayList<Indel>>();
 		for( String key : allDeletionArrayLists.keySet() ){
