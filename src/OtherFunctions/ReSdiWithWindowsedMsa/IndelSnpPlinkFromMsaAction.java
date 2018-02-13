@@ -21,17 +21,19 @@ import java.util.regex.Pattern;
  * */
 
 public class IndelSnpPlinkFromMsaAction {
+	private int threadNumber;
 	private ArrayList<String> names;
 	private HashMap<String, ArrayList<MsaFile>> msaFileLocationsHashmap;
 	private HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap = new HashMap<String, ArrayList<MsaFileRecord>>();
 	private String refName;
 	private String genomeFolder;
 	public IndelSnpPlinkFromMsaAction(ArrayList<String> names, HashMap<String, ArrayList<MsaFile>> msaFileLocationsHashmap,
-                                      String refName, String genomeFolder){
+                                      String refName, String genomeFolder, int threadNumber){
 		this.names=names;
 		this.msaFileLocationsHashmap=msaFileLocationsHashmap;
 		this.genomeFolder=genomeFolder;
 		this.refName = refName;
+		this.threadNumber=threadNumber;
 		this.doIt();
 	}
 	private HashMap<Character, Integer> outputCode = new HashMap<Character, Integer>();
@@ -64,7 +66,9 @@ public class IndelSnpPlinkFromMsaAction {
 					}
 				}
 			}
-			// prepare the chromosome length information by creating fasta index file begin
+			// prepare the chromosome length information by creating fasta index file end
+
+			//prepare the coverage query hashMap begin
 			HashMap<String, WigFileReader> accessionName_WigFileReader_map = new HashMap<String, WigFileReader>();
 			for ( String name : names ) {
 				if( ! name.equalsIgnoreCase(refName) ){
@@ -78,6 +82,8 @@ public class IndelSnpPlinkFromMsaAction {
 					}
 				}
 			}
+			//prepare the coverage query hashMap end
+
             // encode nucleic acids into integer begin
 			outputCode.put('A', 1);
 			outputCode.put('T', 2);
@@ -92,6 +98,7 @@ public class IndelSnpPlinkFromMsaAction {
 			names_set.addAll(names);
 			for(String chrName : msaFileLocationsHashmap.keySet()){
 
+				//chrLengths begin
                 HashMap<String, Integer> chrLengths = new  HashMap<String, Integer>();
                 // the part after last window begin
                 for(String name : names) {
@@ -106,6 +113,7 @@ public class IndelSnpPlinkFromMsaAction {
                         }
                     }
                 }
+                //chrLengths end
 
 				String chrNameSimple = chrName;
 				chrNameSimple = chrNameSimple.replace("Chr", "");
@@ -236,7 +244,10 @@ public class IndelSnpPlinkFromMsaAction {
 					outTped.println();
 					// output boundary indels end
 
+					MyThreadCount threadCount = new MyThreadCount(0);
+
                     // output matrix start
+					TpedOutPutContents tpedOutPutContent_arrayList = new TpedOutPutContents();
                     String lastCol_seq = "";
                     int lastLength = 0;
                     int ref_seq_index = 0;
@@ -262,14 +273,15 @@ public class IndelSnpPlinkFromMsaAction {
                                     if( thisCol_seq.equalsIgnoreCase(lastCol_seq) ) { // if the INDEL state of this one is same with last one
                                         lastLength++;
                                     }else { // if the INDEL state of this one is different with last one, then output
+										StringBuffer contentsb = new StringBuffer();
 										int outPosition = transcriptStart+ref_seq_index-1;
-                                        outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + outPosition);
+										contentsb.append(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + outPosition);
                                         for (int name_index = 0; name_index < names.size(); name_index++) {
                                             char code = lastCol_seq.charAt(name_index);
-                                            outTped.print(" " + code + " " + code);
+											contentsb.append(" " + code + " " + code);
                                         }
-                                        outTped.println();
-
+										TpedOutPutContent tpedOutPutContent = new TpedOutPutContent(index_array, contentsb.toString());
+										tpedOutPutContent_arrayList.add(tpedOutPutContent);
                                         lastCol_seq = thisCol_seq;
                                         lastLength = 1;
                                     }
@@ -279,60 +291,93 @@ public class IndelSnpPlinkFromMsaAction {
                                 }
                             } else {
 						        if ( lastLength > 0 ){ // last one/several contains only INDEL, this one changed, then try to output
+									StringBuffer contentsb = new StringBuffer();
 									int outPosition = transcriptStart+ref_seq_index-1;
-                                    outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + outPosition);
+									contentsb.append(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + outPosition);
                                     for (int name_index = 0; name_index < names.size(); name_index++) {
                                         char code = lastCol_seq.charAt(name_index);
-                                        outTped.print(" " + code + " " + code);
+										contentsb.append(" " + code + " " + code);
                                     }
-                                    outTped.println();
+									TpedOutPutContent tpedOutPutContent = new TpedOutPutContent(index_array, contentsb.toString());
+									tpedOutPutContent_arrayList.add(tpedOutPutContent);
 
                                     lastLength=0;
                                     lastCol_seq="";
                                 }
-                                // output this genotype begin
-								int outPosition = transcriptStart+ref_seq_index-1;
-                                outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + " 0 " + outPosition);
-                                for (int name_index = 0; name_index < names.size(); name_index++) {
-                                    char this_char = sequences[index_array][name_index];
-                                    char ref_char = sequences[index_array][names.size() - 1];
 
-                                    int code = getDnaCode(ref_char);
-                                    if ( sequences[index_array][names.size() - 1] != '-' && this_char == ref_char  ) { // the reference is not deletion
-										if (accessionName_WigFileReader_map.containsKey(names.get(name_index))) { // this is not the reference accession
-											try {
-												Contig result = accessionName_WigFileReader_map.get(names.get(name_index)).query(chrName, outPosition, outPosition);
-												double thisMean = result.mean();
-												if(  Double.isNaN(thisMean) || thisMean<2 ){
-													code = 0; // this is a missing value/low coverage value
-												}
-											}catch (WigFileException e) {
-												e.printStackTrace();
-											}
+								boolean isThisThreadUnrun=true;
+								while(isThisThreadUnrun){
+									if(threadCount.getCount() < threadNumber){
+										threadCount.plusOne();
+										SnpColumn main = new SnpColumn( tpedOutPutContent_arrayList, transcriptStart, ref_seq_index,
+												chrNameSimple, index_array, chrName, sequences, accessionName_WigFileReader_map, threadCount);
+										main.start();
+										isThisThreadUnrun=false;
+									}else{
+										try {
+											Thread.sleep(1);
+										} catch (InterruptedException e) {
+											e.printStackTrace();
 										}
-									} /*else if (! outputCode.containsKey(this_char) ) {
-                                    	// sign IUPAC code to reference Seq
-										//code = getDnaCode(ref_char);
-									} */else if ( outputCode.containsKey(this_char) ) {
-										code = getDnaCode(this_char);
 									}
-                                    outTped.print(" " + code + " " + code);
-                                }
-                                outTped.println();
+								}
+//                                // output this genotype begin
+//								StringBuffer contentsb = new StringBuffer();
+//								int outPosition = transcriptStart+ref_seq_index-1;
+//								contentsb.append(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + " 0 " + outPosition);
+//                                for (int name_index = 0; name_index < names.size(); name_index++) {
+//                                    char this_char = sequences[index_array][name_index];
+//                                    char ref_char = sequences[index_array][names.size() - 1];
+//
+//                                    int code = getDnaCode(ref_char);
+//                                    if ( this_char == ref_char && ref_char != '-' ) { // the reference is not deletion
+//										if (accessionName_WigFileReader_map.containsKey(names.get(name_index))) { // this is not the reference accession
+//											try {
+//												Contig result = accessionName_WigFileReader_map.get(names.get(name_index)).query(chrName, outPosition, outPosition);
+//												double thisMean = result.mean();
+//												if(  Double.isNaN(thisMean) || thisMean<2 ){
+//													code = 0; // this is a missing value/low coverage value
+//												}
+//											} catch (WigFileException e) {
+//												e.printStackTrace();
+//											}
+//										}
+//									} /*else if (! outputCode.containsKey(this_char) ) {
+//                                    	// sign IUPAC code to reference Seq
+//										//code = getDnaCode(ref_char);
+//									} */else if ( outputCode.containsKey(this_char) ) {
+//										code = getDnaCode(this_char);
+//									}
+//									contentsb.append(" " + code + " " + code);
+//                                }
+//								TpedOutPutContent tpedOutPutContent = new TpedOutPutContent(index_array, contentsb.toString());
+//								tpedOutPutContent_arrayList.add(tpedOutPutContent);
                                 // output this genotype end
                             }
-						}else if (lastLength >0) { // if the INDEL state of this one is different with last one, then output
+						} else if (lastLength >0) { // if the INDEL state of this one is different with last one, then output
+							StringBuffer contentsb = new StringBuffer();
 							int outPosition = transcriptStart+ref_seq_index-1;
-                            outTped.print(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + outPosition);
+							contentsb.append(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + "_i_"+lastLength + " 0 " + outPosition);
                             for (int name_index = 0; name_index < names.size(); name_index++) {
                                 char code = lastCol_seq.charAt(name_index);
-                                outTped.print(" " + code + " " + code);
+								contentsb.append(" " + code + " " + code);
                             }
-                            outTped.println();
-
+							TpedOutPutContent tpedOutPutContent = new TpedOutPutContent(index_array, contentsb.toString());
+							tpedOutPutContent_arrayList.add(tpedOutPutContent);
                             lastCol_seq = "";
                             lastLength = 0;
                         }
+					}
+					while(threadCount.hasNext()){// wait for all the thread
+						try {
+							Thread.sleep(1);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+					tpedOutPutContent_arrayList.sort();
+					for( TpedOutPutContent tpedOutPutContent : tpedOutPutContent_arrayList.getTpedOutPutContents()  ){
+						outTped.println(tpedOutPutContent.getContent());
 					}
 					// output matrix end
 				}
@@ -361,6 +406,104 @@ public class IndelSnpPlinkFromMsaAction {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	class TpedOutPutContent implements Comparable<TpedOutPutContent>{
+		private int position;
+		private String content;
+		public TpedOutPutContent(int position, String content) {
+			this.position = position;
+			this.content = content;
+		}
+		public int getPosition() {
+			return position;
+		}
+		public void setPosition(int postion) {
+			this.position = postion;
+		}
+		public String getContent() {
+			return content;
+		}
+		public void setContent(String content) {
+			this.content = content;
+		}
+		public int compareTo ( TpedOutPutContent tpedOutPutContent){
+			return this.position - tpedOutPutContent.getPosition();
+		}
+	}
+	class TpedOutPutContents{
+		private ArrayList<TpedOutPutContent> tpedOutPutContents = new ArrayList<TpedOutPutContent>();
+
+		public synchronized ArrayList<TpedOutPutContent> getTpedOutPutContents() {
+			return tpedOutPutContents;
+		}
+		public synchronized void setTpedOutPutContents(ArrayList<TpedOutPutContent> tpedOutPutContents) {
+			this.tpedOutPutContents = tpedOutPutContents;
+		}
+		public synchronized void add( TpedOutPutContent tpedOutPutContent){
+			this.tpedOutPutContents.add(tpedOutPutContent);
+		}
+		public synchronized void sort(){
+			Collections.sort(tpedOutPutContents);
+		}
+	}
+
+	class SnpColumn extends Thread{
+		private TpedOutPutContents tpedOutPutContent_arrayList;
+		private int transcriptStart;
+		private int ref_seq_index;
+		private String chrNameSimple;
+		private int index_array;
+		private String chrName;
+		private char[][] sequences;
+		private HashMap<String, WigFileReader> accessionName_WigFileReader_map;
+		private MyThreadCount threadCount;
+		public SnpColumn( TpedOutPutContents tpedOutPutContent_arrayList, int transcriptStart, int ref_seq_index,
+						  String chrNameSimple, int index_array, String chrName, char[][] sequences,
+						  HashMap<String, WigFileReader> accessionName_WigFileReader_map, MyThreadCount threadCount ){
+			this.tpedOutPutContent_arrayList = tpedOutPutContent_arrayList;
+			this.transcriptStart = transcriptStart;
+			this.ref_seq_index = ref_seq_index;
+			this.chrNameSimple = chrNameSimple;
+			this.index_array = index_array;
+			this.chrName = chrName;
+			this.sequences = sequences;
+			this.accessionName_WigFileReader_map = accessionName_WigFileReader_map;
+			this.threadCount = threadCount;
+		}
+		public void run( ){
+			StringBuffer contentsb = new StringBuffer();
+			int outPosition = transcriptStart+ref_seq_index-1;
+			contentsb.append(chrNameSimple + " " + chrNameSimple + "_" + transcriptStart + "_" + index_array + " 0 " + outPosition);
+			for (int name_index = 0; name_index < names.size(); name_index++) {
+				char this_char = sequences[index_array][name_index];
+				char ref_char = sequences[index_array][names.size() - 1];
+
+				int code = getDnaCode(ref_char);
+				if ( this_char == ref_char && ref_char != '-' ) { // the reference is not deletion
+					if (accessionName_WigFileReader_map.containsKey(names.get(name_index))) { // this is not the reference accession
+						try {
+							Contig result = accessionName_WigFileReader_map.get(names.get(name_index)).query(chrName, outPosition, outPosition);
+							double thisMean = result.mean();
+							if(  Double.isNaN(thisMean) || thisMean<2 ){
+								code = 0; // this is a missing value/low coverage value
+							}
+						} catch (IOException | WigFileException e) {
+							e.printStackTrace();
+						}
+					}
+				} /*else if (! outputCode.containsKey(this_char) ) {
+                                    	// sign IUPAC code to reference Seq
+										//code = getDnaCode(ref_char);
+									} */else if ( outputCode.containsKey(this_char) ) {
+					code = getDnaCode(this_char);
+				}
+				contentsb.append(" " + code + " " + code);
+			}
+			TpedOutPutContent tpedOutPutContent = new TpedOutPutContent(index_array, contentsb.toString());
+			tpedOutPutContent_arrayList.add(tpedOutPutContent);
+			threadCount.countDown();
 		}
 	}
 }

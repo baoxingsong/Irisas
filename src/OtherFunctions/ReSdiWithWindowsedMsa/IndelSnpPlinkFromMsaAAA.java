@@ -9,7 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class IndelSnpPlinkFromMsaAAA {
-
+    private int threadNumber = 5;
     private String msaFolder;
     private String accessionListFile;
     private String refName;
@@ -37,6 +37,7 @@ public class IndelSnpPlinkFromMsaAAA {
 
 	public IndelSnpPlinkFromMsaAAA(String[] argv ){
 		StringBuffer helpMessage=new StringBuffer("INDEL synchronization pipeline\nE-mail:song@mpipz.mpg.de\nArguments:\n");
+        helpMessage.append("  -t   [integer] thread number (Default 5)\n");
         helpMessage.append("  -i   input folder where could find MSA result\n");
         helpMessage.append("  -l   list of accession names. (the reference accession should be in included)\n");
         helpMessage.append("  -r   name of reference accession/line\n");
@@ -44,12 +45,11 @@ public class IndelSnpPlinkFromMsaAAA {
         helpMessage.append("  -g   the folder where the genome sequences and sdi files are located\n");
         
 		Options options = new Options();
-        options.addOption("n",true,"numberOfAccessions");
+        options.addOption("t",true,"threadnumber");
         options.addOption("i",true,"msaFolder");
         options.addOption("l",true,"accessionListFile");
         options.addOption("r",true,"refName");
         options.addOption("c",true,"chrlist");
-        options.addOption("o",true,"outPutPath");
         options.addOption("g",true,"genomeFolder");
         
         
@@ -61,6 +61,9 @@ public class IndelSnpPlinkFromMsaAAA {
             System.out.println("Please, check the parameters.");
             e.printStackTrace();
             System.exit(1);
+        }
+        if(cmd.hasOption("t")){
+            threadNumber = Integer.parseInt(cmd.getOptionValue("t"));
         }
         if(cmd.hasOption("i")){
         	msaFolder = cmd.getOptionValue("i");
@@ -185,7 +188,7 @@ public class IndelSnpPlinkFromMsaAAA {
 				}
                 // get msa file list end
 
-                new IndelSnpPlinkFromMsaAction(names, msaFileLocationsHashmap, refName, genomeFolder);
+                new IndelSnpPlinkFromMsaAction(names, msaFileLocationsHashmap, refName, genomeFolder, threadNumber);
 			}
 		}
 	}
