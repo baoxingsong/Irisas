@@ -1,5 +1,6 @@
 package OtherFunctions.ReSdiWithWindowsedMsa;
 
+import me.songbx.service.ChromoSomeReadService;
 import org.apache.commons.cli.*;
 
 import java.io.BufferedReader;
@@ -187,7 +188,8 @@ public class ReSDIFromMsaAAAVLinkversion {
 		}else{
 			outPutPathFolder.mkdirs();
 		}
-		
+        ChromoSomeReadService refChromoSomeRead = new ChromoSomeReadService(genomeFolder + File.separator + refName + ".fa");
+
         for(String ss1 : chrs){
         	if( (new File(msaFolder + File.separator + ss1)).isDirectory() ){
         		HashMap<String, ArrayList<String>> msaFileLocationsHashmap = new HashMap<String, ArrayList<String>>();
@@ -219,7 +221,7 @@ public class ReSDIFromMsaAAAVLinkversion {
 						newNames.add(names.get(a));
 //						System.out.println(names.get(a));
 					}
-					new ReSDIFromMsaActionLinkVersion(newNames, msaFileLocationsHashmap, threadNumber, outPutPath + File.separator+ss1+File.separator, refName, genomeFolder);
+					new ReSDIFromMsaActionLinkVersion(newNames, msaFileLocationsHashmap, threadNumber, outPutPath + File.separator+ss1+File.separator, refName, genomeFolder, refChromoSomeRead);
 				}
 			}
 		}

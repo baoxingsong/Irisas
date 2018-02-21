@@ -28,7 +28,6 @@ public class ReSDIFromMsaActionLinkVersion {
 	private ArrayList<String> names;
 	private HashMap<String, ArrayList<String>> msaFileLocationsHashmap;
 	private int threadNumber;
-	
 
 	
 	private HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap = new HashMap<String, ArrayList<MsaFileRecord>>();
@@ -36,17 +35,20 @@ public class ReSDIFromMsaActionLinkVersion {
 	
 	private String refName;
 	private String genomeFolder;
+	private ChromoSomeReadService refChromoSomeRead;
 	public ReSDIFromMsaActionLinkVersion(ArrayList<String> names, HashMap<String, ArrayList<String>> msaFileLocationsHashmap, int threadNumber, String outputDir,
-		String refName, String genomeFolder){
+		String refName, String genomeFolder, ChromoSomeReadService refChromoSomeRead){
 		this.names=names;
 		this.msaFileLocationsHashmap=msaFileLocationsHashmap;
 		this.threadNumber=threadNumber;
 		this.outputDir=outputDir;
 		this.genomeFolder=genomeFolder;
 		this.refName = refName;
+		this.refChromoSomeRead = refChromoSomeRead;
 		this.doIt();
+		System.gc();
 	}
-		
+
 	private void doIt(){
 		Iterator<String> chrNameI = msaFileLocationsHashmap.keySet().iterator();
 		while(chrNameI.hasNext()){
@@ -90,10 +92,9 @@ public class ReSDIFromMsaActionLinkVersion {
 			Collections.sort(msaFileRecords);
 			msaFileRecordsHashMap.put(chrName, msaFileRecords);
 		}
-		//System.out.println("multiple sequences alighment reading is done");
+		System.out.println("multiple sequences alignment reading is done");
 		
-		ChromoSomeReadService refChromoSomeRead = new ChromoSomeReadService(genomeFolder + File.separator + refName + ".fa");
-		
+
 		MyThreadCount threadCount = new MyThreadCount(0);
 		for(String name : names){
 			String targetchromeSomeReadFileLocation;
@@ -117,7 +118,7 @@ public class ReSDIFromMsaActionLinkVersion {
             }
 		}
 		System.gc();
-		while(threadCount.hasNext()){// wait for all the thread
+		while(threadCount.hasNext()){// wait for all the threads
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
@@ -183,6 +184,7 @@ public class ReSDIFromMsaActionLinkVersion {
 		}
 		
 		public void run(){
+			System.out.println(name + " begin");
 			ChromoSomeReadService chromoSomeRead = new ChromoSomeReadService(targetchromeSomeReadFileLocation);
 			HashMap<String, FirstLastList> sdiRecords = new HashMap<String, FirstLastList>();
 			HashMap<String, ArrayList<MapSingleRecord>> sdiRecordsArrays = new HashMap<String, ArrayList<MapSingleRecord>>();
@@ -218,8 +220,11 @@ public class ReSDIFromMsaActionLinkVersion {
 							//deleted the extend sequence only keep the wanted region
 							refLetterNumber=0;
 							targetLetterNumber=0;
-							String refSeq="";
-							String targetSeq="";
+							//String refSeq="";
+							//String targetSeq="";
+							ArrayList<Character> refSeq = new ArrayList<Character>();
+							ArrayList<Character> targetSeq = new ArrayList<Character>();
+
 							for(int ai=0; ai<refMsaSingleRecord.getSequence().length(); ai++){
 								if(refMsaSingleRecord.getSequence().charAt(ai) != '-'){
 									refLetterNumber++;
@@ -238,25 +243,25 @@ public class ReSDIFromMsaActionLinkVersion {
 									targetTranscriptEnd = msaTargetStart+targetLetterNumber-1;
 								}								
 								if(transcriptStart<=(msaRefStart+refLetterNumber-1) && (msaRefStart+refLetterNumber-1)<transcriptEnd){
-									refSeq=refSeq+refMsaSingleRecord.getSequence().charAt(ai);
-									targetSeq=targetSeq+targetMsaSingleRecord.getSequence().charAt(ai);
+									refSeq.add(refMsaSingleRecord.getSequence().charAt(ai));
+									targetSeq.add(targetMsaSingleRecord.getSequence().charAt(ai));
 								}else if((msaRefStart+refLetterNumber-1)==transcriptEnd && refMsaSingleRecord.getSequence().charAt(ai) != '-'){
-									refSeq=refSeq+refMsaSingleRecord.getSequence().charAt(ai);
-									targetSeq=targetSeq+targetMsaSingleRecord.getSequence().charAt(ai);
+									refSeq.add(refMsaSingleRecord.getSequence().charAt(ai));
+									targetSeq.add(targetMsaSingleRecord.getSequence().charAt(ai));
 								}
 							}
 							if( (i==(msaFileRecords.size()-1)) && targetTranscriptEnd == 0 ){
 								targetTranscriptEnd = chromoSomeRead.getChromoSomeById(chrName).getSequence().length();
 							}
 						//	System.out.println("249 \t" + transcriptStart+" "+transcriptEnd+" "+refSeq+" "+targetTranscriptStart+" "+targetTranscriptEnd+" "+targetSeq);
-							refSeq=refSeq.toUpperCase();
-							targetSeq=targetSeq.toUpperCase();
+							//refSeq=refSeq.toUpperCase();
+							//targetSeq=targetSeq.toUpperCase();
 							TwoSeqOfMsaResult twoSeqOfMsaResult = new TwoSeqOfMsaResult(transcriptStart, transcriptEnd, refSeq, targetTranscriptStart, targetTranscriptEnd, targetSeq);
 							twoSeqOfMsaResults.add(twoSeqOfMsaResult);
 						}
 					}
 					Collections.sort(twoSeqOfMsaResults);
-					//System.out.println(name + "	" + chrName +"	trim finished");
+					System.out.println(name + "	" + chrName +"	trim finished");
 					
 					
 					//System.out.println("0 start " + twoSeqOfMsaResults.get(0).getResultStart() + " end " + twoSeqOfMsaResults.get(0).getResultEnd() );
@@ -275,12 +280,12 @@ public class ReSDIFromMsaActionLinkVersion {
 								if( lastEnd >= twoSeqOfMsaResults.get(j).getResultStart() ){
 									int overLapLength = lastEnd - twoSeqOfMsaResults.get(j).getResultStart();
 									overLapLength++;
-									String oldSequence=twoSeqOfMsaResults.get(j).getResultSeq();
-									String newSequence=oldSequence;
+									ArrayList<Character> oldSequence=twoSeqOfMsaResults.get(j).getResultSeq();
+									ArrayList<Character> newSequence=oldSequence;
 									int corrected = 0;
-									for( int t=0; t<oldSequence.length(); t++ ){
-										if(corrected<overLapLength && oldSequence.charAt(t)!='-'){
-											newSequence=newSequence.subSequence(0, t)+"-"+newSequence.subSequence(t+1, newSequence.length());
+									for( int t=0; t<oldSequence.size(); t++ ){
+										if(corrected<overLapLength && oldSequence.get(t)!='-'){
+											newSequence.set(t, '-');//=newSequence.subSequence(0, t)+"-"+newSequence.subSequence(t+1, newSequence.length());
 											corrected++;
 										}
 									}
@@ -291,8 +296,14 @@ public class ReSDIFromMsaActionLinkVersion {
 									}else{
 										largetEnd = twoSeqOfMsaResults.get(j-1).getResultEnd();
 									}
-									TwoSeqOfMsaResult twoSeqOfMsaResult = new TwoSeqOfMsaResult(twoSeqOfMsaResults.get(j-1).getRefStart(), twoSeqOfMsaResults.get(j).getRefEnd(), twoSeqOfMsaResults.get(j-1).getRefSeq()+twoSeqOfMsaResults.get(j).getRefSeq(),
-											twoSeqOfMsaResults.get(j-1).getResultStart(),largetEnd, twoSeqOfMsaResults.get(j-1).getResultSeq()+newSequence);
+									ArrayList<Character> rt = twoSeqOfMsaResults.get(j-1).getRefSeq();
+									rt.addAll(twoSeqOfMsaResults.get(j).getRefSeq());
+
+									ArrayList<Character> tt = twoSeqOfMsaResults.get(j-1).getResultSeq();
+									tt.addAll(newSequence);
+
+									TwoSeqOfMsaResult twoSeqOfMsaResult = new TwoSeqOfMsaResult(twoSeqOfMsaResults.get(j-1).getRefStart(), twoSeqOfMsaResults.get(j).getRefEnd(), rt,
+											twoSeqOfMsaResults.get(j-1).getResultStart(),largetEnd, tt);
 									twoSeqOfMsaResults.set(j, twoSeqOfMsaResult);
 									twoSeqOfMsaResults.remove(j-1);
 		//							System.out.println("273 " + j);
@@ -305,26 +316,25 @@ public class ReSDIFromMsaActionLinkVersion {
 					}
 					
 					Collections.sort(twoSeqOfMsaResults);
-//					System.out.println(name + " msa prepared");
+					System.out.println(name + " sequence alignment data structure prepared");
 //					//begin: insert the first SDI record(the SDI record before the first gene)
 					MapSingleRecord mapSingleRecord;
 					if(twoSeqOfMsaResults.get(0).getRefStart()>1){						
-							String ori = refChromoSomeRead.getSubSequence(chrName, 1, twoSeqOfMsaResults.get(0).getRefStart()-1, Strand.POSITIVE);
-							String result;
-							int resultLength=0;
-							if(twoSeqOfMsaResults.get(0).getResultStart()>1){
-								result = chromoSomeRead.getSubSequence(chrName, 1, twoSeqOfMsaResults.get(0).getResultStart()-1, Strand.POSITIVE);
-								resultLength=result.length();
-							}else{
-								result = "";
-							}
-							int changedLength = resultLength-ori.length();
-							mapSingleRecord = new MapSingleRecord(1, changedLength, ori, result);
-							
-							if(!ori.equals(result)){
-								sdiRecords.get(chrName).insertLast(mapSingleRecord);
-							}
-						
+						String ori = refChromoSomeRead.getSubSequence(chrName, 1, twoSeqOfMsaResults.get(0).getRefStart()-1, Strand.POSITIVE);
+						String result;
+						int resultLength=0;
+						if(twoSeqOfMsaResults.get(0).getResultStart()>1){
+							result = chromoSomeRead.getSubSequence(chrName, 1, twoSeqOfMsaResults.get(0).getResultStart()-1, Strand.POSITIVE);
+							resultLength=result.length();
+						}else{
+							result = "";
+						}
+						int changedLength = resultLength-ori.length();
+						mapSingleRecord = new MapSingleRecord(1, changedLength, ori, result);
+
+						if(!ori.equals(result)){
+							sdiRecords.get(chrName).insertLast(mapSingleRecord);
+						}
 					}else if(twoSeqOfMsaResults.get(0).getRefStart()==1 && twoSeqOfMsaResults.get(0).getResultStart()>1){
 						String result = chromoSomeRead.getSubSequence(chrName, 1, twoSeqOfMsaResults.get(0).getResultStart()-1, Strand.POSITIVE);
 						mapSingleRecord = new MapSingleRecord(1, result.length(), "-", result);
@@ -339,14 +349,29 @@ public class ReSDIFromMsaActionLinkVersion {
 						//if(twoSeqOfMsaResults.get(i).getResultEnd() <= (twoSeqOfMsaResults.get(i+1).getResultStart()-1)){
 							//System.out.println("no overlap");
 							int refLetterNumber=0;
-							for(int ai=0; ai<twoSeqOfMsaResults.get(i).getRefSeq().length(); ai++){
-								if(twoSeqOfMsaResults.get(i).getRefSeq().charAt(ai) != '-'){
+							for(int ai=0; ai<twoSeqOfMsaResults.get(i).getRefSeq().size(); ai++){
+								if(twoSeqOfMsaResults.get(i).getRefSeq().get(ai) != '-'){
 									refLetterNumber++;
 								}
-								if(twoSeqOfMsaResults.get(i).getRefSeq().charAt(ai) != twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai)){
-									if(twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai) == '-'){
-										mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber-1, -1, ""+twoSeqOfMsaResults.get(i).getRefSeq().charAt(ai), "-");
-									}else if(twoSeqOfMsaResults.get(i).getRefSeq().charAt(ai) == '-'){
+								if(twoSeqOfMsaResults.get(i).getRefSeq().get(ai) != twoSeqOfMsaResults.get(i).getResultSeq().get(ai)){
+									if(twoSeqOfMsaResults.get(i).getResultSeq().get(ai) == '-'){
+										//if(null != sdiRecords.get(chrName).getLast()){
+//											MapSingleRecord lastMapSingleRecord=sdiRecords.get(chrName).getLast().getMapSingleRecord();
+//											if( lastMapSingleRecord.getChanged()<0 && (lastMapSingleRecord.getBasement()+ Math.abs(lastMapSingleRecord.getChanged()) )==(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber-1) && lastMapSingleRecord.getResult().equals("-")){
+//												try {
+//													sdiRecords.get(chrName).deleteLast();
+//												} catch (Exception e) {
+//													e.printStackTrace();
+//												}
+//												mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart() + refLetterNumber - 1, lastMapSingleRecord.getChanged()-1, lastMapSingleRecord.getOriginal() + twoSeqOfMsaResults.get(i).getRefSeq().get(ai), "-");
+//											}else{
+//												mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart() + refLetterNumber - 1, -1, "" + twoSeqOfMsaResults.get(i).getRefSeq().get(ai), "-");
+//											}
+//										}else {
+											mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart() + refLetterNumber - 1, -1, "" + twoSeqOfMsaResults.get(i).getRefSeq().get(ai), "-");
+											//mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart() + refLetterNumber - 1, -1, "" + twoSeqOfMsaResults.get(i).getRefSeq().get(ai), "-");
+										//}
+									}else if(twoSeqOfMsaResults.get(i).getRefSeq().get(ai) == '-'){
 										if(null != sdiRecords.get(chrName).getLast()){
 											MapSingleRecord lastMapSingleRecord=sdiRecords.get(chrName).getLast().getMapSingleRecord();
 											if(lastMapSingleRecord.getBasement()==(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber) && lastMapSingleRecord.getChanged()>0 && lastMapSingleRecord.getOriginal().equals("-")){
@@ -355,15 +380,15 @@ public class ReSDIFromMsaActionLinkVersion {
 												} catch (Exception e) {
 													e.printStackTrace();
 												}
-												mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, lastMapSingleRecord.getChanged()+1, "-", lastMapSingleRecord.getResult()+twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai));
+												mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, lastMapSingleRecord.getChanged()+1, "-", lastMapSingleRecord.getResult()+twoSeqOfMsaResults.get(i).getResultSeq().get(ai));
 											}else{
-												mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, 1, "-", ""+twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai));
+												mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, 1, "-", ""+twoSeqOfMsaResults.get(i).getResultSeq().get(ai));
 											}
 										}else{
-											mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, 1, "-", ""+twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai));
+											mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, 1, "-", ""+twoSeqOfMsaResults.get(i).getResultSeq().get(ai));
 										}
 									}else{
-										mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber-1, 0, ""+twoSeqOfMsaResults.get(i).getRefSeq().charAt(ai), ""+twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai));
+										mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber-1, 0, ""+twoSeqOfMsaResults.get(i).getRefSeq().get(ai), ""+twoSeqOfMsaResults.get(i).getResultSeq().get(ai));
 									}
 									sdiRecords.get(chrName).insertLast(mapSingleRecord);
 								}
@@ -404,14 +429,14 @@ public class ReSDIFromMsaActionLinkVersion {
 					if(i == (twoSeqOfMsaResults.size()-1)){
 						//System.out.println("i="+i+" twoSeqOfMsaResults.size()-1:"+(twoSeqOfMsaResults.size()-1));
 						int refLetterNumber=0;
-						for(int ai=0; ai<twoSeqOfMsaResults.get(i).getRefSeq().length(); ai++){
-							if(twoSeqOfMsaResults.get(i).getRefSeq().charAt(ai) != '-'){
+						for(int ai=0; ai<twoSeqOfMsaResults.get(i).getRefSeq().size(); ai++){
+							if(twoSeqOfMsaResults.get(i).getRefSeq().get(ai) != '-'){
 								refLetterNumber++;
 							}
-							if(twoSeqOfMsaResults.get(i).getRefSeq().charAt(ai) != twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai)){
-								if(twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai) == '-'){
-									mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber-1, -1, ""+twoSeqOfMsaResults.get(i).getRefSeq().charAt(ai), "-");
-								}else if(twoSeqOfMsaResults.get(i).getRefSeq().charAt(ai) == '-'){
+							if(twoSeqOfMsaResults.get(i).getRefSeq().get(ai) != twoSeqOfMsaResults.get(i).getResultSeq().get(ai)){
+								if(twoSeqOfMsaResults.get(i).getResultSeq().get(ai) == '-'){
+									mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber-1, -1, ""+twoSeqOfMsaResults.get(i).getRefSeq().get(ai), "-");
+								}else if(twoSeqOfMsaResults.get(i).getRefSeq().get(ai) == '-'){
 									if(null != sdiRecords.get(chrName).getLast()){
 										MapSingleRecord lastMapSingleRecord=sdiRecords.get(chrName).getLast().getMapSingleRecord();
 										if(lastMapSingleRecord.getBasement()==(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber) && lastMapSingleRecord.getChanged()>0 && lastMapSingleRecord.getOriginal().equals("-")){
@@ -420,15 +445,15 @@ public class ReSDIFromMsaActionLinkVersion {
 											} catch (Exception e) {
 												e.printStackTrace();
 											}
-											mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, lastMapSingleRecord.getChanged()+1, "-", lastMapSingleRecord.getResult()+twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai));
+											mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, lastMapSingleRecord.getChanged()+1, "-", lastMapSingleRecord.getResult()+twoSeqOfMsaResults.get(i).getResultSeq().get(ai));
 										}else{
-											mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, 1, "-", ""+twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai));
+											mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, 1, "-", ""+twoSeqOfMsaResults.get(i).getResultSeq().get(ai));
 										}
 									}else{
-										mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, 1, "-", ""+twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai));
+										mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber, 1, "-", ""+twoSeqOfMsaResults.get(i).getResultSeq().get(ai));
 									}
 								}else{
-									mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber-1, 0, ""+twoSeqOfMsaResults.get(i).getRefSeq().charAt(ai), ""+twoSeqOfMsaResults.get(i).getResultSeq().charAt(ai));
+									mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(i).getRefStart()+refLetterNumber-1, 0, ""+twoSeqOfMsaResults.get(i).getRefSeq().get(ai), ""+twoSeqOfMsaResults.get(i).getResultSeq().get(ai));
 								}
 								//System.out.println("423"+mapSingleRecord.getOriginal() +"\t"+mapSingleRecord.getResult());
 								sdiRecords.get(chrName).insertLast(mapSingleRecord);
@@ -470,8 +495,8 @@ public class ReSDIFromMsaActionLinkVersion {
 					}else if(oriSeq.length()>0){
 //						System.out.println("should never run here");
 					}
-					//System.out.println(name + ": link data structure start");
-					for( int runingCound = 0; runingCound<2; ++runingCound) { // run here for twice, it is better for check the neighbouring unnecessary records
+					System.out.println(name + ": link data structure start");
+//					for( int runingCound = 0; runingCound<2; ++runingCound) { // run here for twice, it is better for check the neighbouring unnecessary records
 						if (sdiRecords.get(chrName).getFirst() != null && sdiRecords.get(chrName).getFirst().getNext() != null) {
 							Data lastOne = sdiRecords.get(chrName).getFirst();
 							Data currOne = sdiRecords.get(chrName).getFirst().getNext();
@@ -482,6 +507,7 @@ public class ReSDIFromMsaActionLinkVersion {
 								if (currOne.getMapSingleRecord().getChanged() < 0 && lastOne.getMapSingleRecord().getChanged() < 0 &&
 										(lastOne.getMapSingleRecord().getBasement() + Math.abs(lastOne.getMapSingleRecord().getChanged())) == currOne.getMapSingleRecord().getBasement()
 										&& lastOne.getMapSingleRecord().getResult().equals("-") && currOne.getMapSingleRecord().getResult().equals("-")) {
+
 									MapSingleRecord mapSingleRecord2 = new MapSingleRecord(lastOne.getMapSingleRecord().getBasement(), lastOne.getMapSingleRecord().getChanged() + currOne.getMapSingleRecord().getChanged(),
 											lastOne.getMapSingleRecord().getOriginal() + currOne.getMapSingleRecord().getOriginal(), "-");
 									// merge to deletions
@@ -492,20 +518,21 @@ public class ReSDIFromMsaActionLinkVersion {
 										} catch (Exception e) {
 											e.printStackTrace();
 										}
+										currOne.setMapSingleRecord(mapSingleRecord2);
+										lastOne = currOne;
+										currOne = nextOne;
 									} else {
 										lastOne.getLast().setNext(currOne);
 										currOne.setLast(lastOne.getLast());
 										lastOne.setLast(null);
 										lastOne.setNext(null);
-										lastOne = currOne.getLast();
+										currOne.setMapSingleRecord(mapSingleRecord2);
+										lastOne = currOne.getLast(); // here do not go forward, to check the identity of insertion and deletion
 									}
-									//delete last one end
-									currOne.setMapSingleRecord(mapSingleRecord2);
-									lastOne = currOne;
-									currOne = nextOne;
+									// delete last one end
 								} else if (currOne.getMapSingleRecord().getChanged() == 0 && currOne.getMapSingleRecord().getOriginal().endsWith("-") && currOne.getMapSingleRecord().getResult().equals("-")) {
-									//delete current one
-									// delete records that gives not information
+									// delete current one
+									// delete records that gives no information
 									lastOne.setNext(currOne.getNext());
 									currOne.getNext().setLast(lastOne);
 									currOne.setLast(null);
@@ -520,11 +547,11 @@ public class ReSDIFromMsaActionLinkVersion {
 									currOne.setNext(null);
 									currOne = nextOne;
 								} else if ( (currOne.getMapSingleRecord().getChanged() < 0 && lastOne.getMapSingleRecord().getChanged() > 0
-										&& currOne.getMapSingleRecord().getOriginal().compareTo(lastOne.getMapSingleRecord().getResult()) == 0 &&
+										&& currOne.getMapSingleRecord().getOriginal().equalsIgnoreCase(lastOne.getMapSingleRecord().getResult())  &&
 										currOne.getMapSingleRecord().getBasement() == lastOne.getMapSingleRecord().getBasement() )
 										|| (currOne.getMapSingleRecord().getChanged() > 0 && lastOne.getMapSingleRecord().getChanged() < 0
-										&& currOne.getMapSingleRecord().getResult().compareTo(lastOne.getMapSingleRecord().getOriginal()) == 0 &&
-										(currOne.getMapSingleRecord().getBasement()-1) == lastOne.getMapSingleRecord().getBasement()) ) { //delete one insertion and next reverse sence deletion
+										&& currOne.getMapSingleRecord().getResult().equalsIgnoreCase(lastOne.getMapSingleRecord().getOriginal()) &&
+										(currOne.getMapSingleRecord().getBasement()-1) == lastOne.getMapSingleRecord().getBasement()) ) { //delete one insertion and next reverse deletion
 
 									//delete current one and prev
 									if (((currOne.getLast())) == (sdiRecords.get(chrName).getFirst())) {
@@ -549,6 +576,10 @@ public class ReSDIFromMsaActionLinkVersion {
 										currOne.getLast().getLast().setNext(currOne.getNext());
 										currOne.getNext().setLast(currOne.getLast().getLast());
 										Data temp = currOne.getNext();
+										currOne.setLast(null);
+										currOne.setNext(null);
+										lastOne.setLast(null);
+										lastOne.setNext(null);
 										currOne = temp;
 										lastOne = temp.getLast();
 									}
@@ -558,9 +589,10 @@ public class ReSDIFromMsaActionLinkVersion {
 								}
 							}
 						}
-					}
+					//}
+					System.out.println(name + ": link data structure end");
 
-					//System.out.println(name + ": link data structure end");
+					/*
 					ArrayList<MapSingleRecord> sdiRecordsThisOne = new ArrayList<MapSingleRecord>();
 					if(sdiRecords.get(chrName).getFirst() != null){
 						Data thisone = sdiRecords.get(chrName).getFirst();
@@ -599,21 +631,43 @@ public class ReSDIFromMsaActionLinkVersion {
 						
 					}
 					sdiRecordsArrays.put(chrName, sdiRecordsThisOne);
+					*/
 				}
 			}
 			
 			int lineNumber = 0;
-			for(String chr : sdiRecordsArrays.keySet()){
-				if(sdiRecordsArrays.get(chr).size()>0){
+//			for(String chr : sdiRecordsArrays.keySet()){
+//				if(sdiRecordsArrays.get(chr).size()>0){
+//					String lastLine="";
+//					try {
+//						PrintWriter out = new PrintWriter(new FileOutputStream(outputDir+File.separator+name+"_"+chr+".myv2.sdi"), true);
+//						for(MapSingleRecord mapSingleRecord : sdiRecordsArrays.get(chr)){
+//							if(lineNumber >= 1){
+//								out.println(lastLine);
+//							}
+//							lastLine=chr+"\t"+mapSingleRecord.getBasement()+"\t"+mapSingleRecord.getChanged()+"\t"+mapSingleRecord.getOriginal()+"\t"+mapSingleRecord.getResult();
+//							lineNumber++;
+//						}
+//						out.print(lastLine);
+//						out.close();
+//					} catch (FileNotFoundException e) {
+//						e.printStackTrace();
+//					}
+//				}
+//			}
+			for(String chr : sdiRecords.keySet()){
+				if(sdiRecords.get(chr).getFirst() != null){
 					String lastLine="";
 					try {
 						PrintWriter out = new PrintWriter(new FileOutputStream(outputDir+File.separator+name+"_"+chr+".myv2.sdi"), true);
-						for(MapSingleRecord mapSingleRecord : sdiRecordsArrays.get(chr)){
+						Data thisone = sdiRecords.get(chr).getFirst();
+						while( thisone != null ){
 							if(lineNumber >= 1){
 								out.println(lastLine);
-							}							
-							lastLine=chr+"\t"+mapSingleRecord.getBasement()+"\t"+mapSingleRecord.getChanged()+"\t"+mapSingleRecord.getOriginal()+"\t"+mapSingleRecord.getResult();
+							}
+							lastLine=chr+"\t"+thisone.getMapSingleRecord().getBasement()+"\t"+thisone.getMapSingleRecord().getChanged()+"\t"+thisone.getMapSingleRecord().getOriginal()+"\t"+thisone.getMapSingleRecord().getResult();
 							lineNumber++;
+							thisone=thisone.getNext();
 						}
 						out.print(lastLine);
 						out.close();
@@ -622,7 +676,6 @@ public class ReSDIFromMsaActionLinkVersion {
 					}
 				}
 			}
-			
 			threadCount.countDown();
 		}
 	}

@@ -1,15 +1,17 @@
 package me.songbx.model;
 
+import java.util.ArrayList;
+
 public class TwoSeqOfMsaResult implements Comparable<TwoSeqOfMsaResult>{
 	private int refStart;
 	private int refEnd;
-	private String refSeq;
 	private int resultStart;
 	private int resultEnd;
-	private String resultSeq;
+	private ArrayList<Character> refSeq;
+	private ArrayList<Character> resultSeq;
 	
-	public TwoSeqOfMsaResult(int refStart, int refEnd, String refSeq,
-			int resultStart, int resultEnd, String resultSeq) {
+	public TwoSeqOfMsaResult(int refStart, int refEnd, ArrayList<Character> refSeq,
+			int resultStart, int resultEnd, ArrayList<Character> resultSeq) {
 		super();
 		this.refStart = refStart;
 		this.refEnd = refEnd;
@@ -19,7 +21,7 @@ public class TwoSeqOfMsaResult implements Comparable<TwoSeqOfMsaResult>{
 		this.resultSeq = resultSeq;
 	}
 	
-	public TwoSeqOfMsaResult(int refStart, int refEnd, String refSeq, String resultSeq) {
+	public TwoSeqOfMsaResult(int refStart, int refEnd,  ArrayList<Character> refSeq,  ArrayList<Character> resultSeq) {
 		super();
 		this.refStart = refStart;
 		this.refEnd = refEnd;
@@ -39,10 +41,10 @@ public class TwoSeqOfMsaResult implements Comparable<TwoSeqOfMsaResult>{
 	public synchronized void setRefEnd(int refEnd) {
 		this.refEnd = refEnd;
 	}
-	public synchronized String getRefSeq() {
+	public synchronized ArrayList<Character> getRefSeq() {
 		return refSeq;
 	}
-	public synchronized void setRefSeq(String refSeq) {
+	public synchronized void setRefSeq(ArrayList<Character> refSeq) {
 		this.refSeq = refSeq;
 	}
 	public synchronized int getResultStart() {
@@ -57,10 +59,10 @@ public class TwoSeqOfMsaResult implements Comparable<TwoSeqOfMsaResult>{
 	public synchronized void setResultEnd(int resultEnd) {
 		this.resultEnd = resultEnd;
 	}
-	public synchronized String getResultSeq() {
+	public synchronized ArrayList<Character> getResultSeq() {
 		return resultSeq;
 	}
-	public synchronized void setResultSeq(String resultSeq) {
+	public synchronized void setResultSeq(ArrayList<Character> resultSeq) {
 		this.resultSeq = resultSeq;
 	}
 	@Override
