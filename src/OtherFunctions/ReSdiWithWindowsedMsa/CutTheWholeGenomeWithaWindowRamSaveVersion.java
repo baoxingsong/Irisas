@@ -22,6 +22,8 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 	private String refName;
 	private String accessionListFile;
 	private String genomeFolder;
+	private boolean append = false;
+	private String postFix;
 	public CutTheWholeGenomeWithaWindowRamSaveVersion( ){
 
 	}
@@ -63,6 +65,8 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
         helpMessage.append("  -r   name of reference accession/line\n");
         helpMessage.append("  -l   list of accession names\n");
         helpMessage.append("  -g   the folder where the genome sequences and sdi files are located\n");
+		helpMessage.append("  -append 	append the sequence set to existing files\n");
+		helpMessage.append("  -postfix 	if append is true, the postfix out existing files (.mafft for the result of easy pipeline)\n");
 
 		Options options = new Options();
         options.addOption("t",true,"threadnumber");
@@ -72,6 +76,8 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
         options.addOption("r",true,"referenceName");
         options.addOption("l",true,"accessionListFile");
         options.addOption("g",true,"genomeFolder");
+		options.addOption("append",false,"genomeFolder");
+		options.addOption("postfix",true,"genomeFolder");
         
         CommandLineParser parser = new PosixParser();
         CommandLine cmd=null;
@@ -85,6 +91,14 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
         if(cmd.hasOption("t")){
         	threadNumber = Integer.parseInt(cmd.getOptionValue("t"));
         }
+        if( cmd.hasOption("append") ){
+        	append = true;
+        	if( cmd.hasOption("postfix") ){
+				postFix=cmd.getOptionValue("postfix");
+			}else{
+				postFix="";
+			}
+		}
         if(cmd.hasOption("w")){
         	windowSize = Integer.parseInt(cmd.getOptionValue("w"));
         }
@@ -135,7 +149,11 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 					names.add(tempString);
 				}
 			}
-			names.add(refName);
+			if( append ){
+
+			} else {
+				names.add(refName);
+			}
 			reader.close();
 		} catch (IOException e1) {
 			e1.printStackTrace();
@@ -173,9 +191,13 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 				}
 				String outPutFile = outPutPath + File.separator+ chrName + File.separator + geneName;
 				fastaFiles.add(outPutFile);
-				PrintWriter outPutcds = new PrintWriter(outPutFile); // create new empty file or empty the exists file. Then could append content to this file
-				
-				outPutcds .close();
+
+				if( append ){
+
+				}else {
+					PrintWriter outPutcds = new PrintWriter(outPutFile); // create new empty file or empty the exists file. Then could append content to this file
+					outPutcds.close();
+				}
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -194,7 +216,9 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 				boolean isThisThreadUnrun=true;
 				while(isThisThreadUnrun){
 	                if(threadCount.getCount() < threadNumber){
-	                	CutTheWholeGenomeParallel cutTheWholeGenomeParallel = new CutTheWholeGenomeParallel(window, mapfile, overLapSize, targetchromoSomeRead, name, outPutPath, threadCount, refChromoSomeRead);
+	                	CutTheWholeGenomeParallel cutTheWholeGenomeParallel = new CutTheWholeGenomeParallel(window,
+								mapfile, overLapSize, targetchromoSomeRead, name, outPutPath, threadCount,
+								refChromoSomeRead, append, postFix);
 	                    threadCount.plusOne();
 	                	cutTheWholeGenomeParallel.start();
 	                    isThisThreadUnrun=false;
@@ -320,7 +344,12 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 		private String outPutPath;
 		private MyThreadCount threadCount;
 		private ChromoSomeReadService refChromoSomeRead;
-		public CutTheWholeGenomeParallel(Window window, MapFileService mapfile, int overLapSize, ChromoSomeReadService targetchromoSomeRead, String name,  String outPutPath, MyThreadCount threadCount, ChromoSomeReadService refChromoSomeRead){
+		private boolean append;
+		private String postFix;
+		public CutTheWholeGenomeParallel(Window window, MapFileService mapfile, int overLapSize,
+										 ChromoSomeReadService targetchromoSomeRead, String name,
+										 String outPutPath, MyThreadCount threadCount,
+										 ChromoSomeReadService refChromoSomeRead, boolean append, String postFix){
 			this.window = window;
 			this.mapfile=mapfile;
 			this.overLapSize = overLapSize;
@@ -329,6 +358,8 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 			this.threadCount=threadCount;
 			this.outPutPath=outPutPath;
 			this.refChromoSomeRead=refChromoSomeRead;
+			this.append=append;
+			this.postFix=postFix;
 		}
 		
 		public void run(){
@@ -344,8 +375,7 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 			if(liftStart >= targetchromoSomeRead.getChromoSomeById(chrName).getSequence().length()){
 				liftStart = targetchromoSomeRead.getChromoSomeById(chrName).getSequence().length();
 			}
-			
-			
+
 			int liftend = mapfile.getChangedFromBasement(chrName, end);
 			liftend=liftend+overLapSize;
 			if( liftend <= 0 ){
@@ -363,6 +393,9 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 			String se = targetchromoSomeRead.getSubSequence(chrName, liftStart, liftend, Strand.POSITIVE);
 			
 			String geneName = ""+window.getStart()+"_"+window.getEnd();
+			if( append ){
+				geneName += postFix;
+			}
 			try {
 				PrintWriter outPutcds = new PrintWriter( new BufferedWriter(new FileWriter(outPutPath + File.separator + chrName + File.separator + geneName, true)));
 				outPutcds.println(">"+name+"_"+liftStart+"_"+liftend);
@@ -374,17 +407,17 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 			threadCount.countDown();
 		}
 	}
-	
-	class MyOutPut{
-		public synchronized void myPrint(String filePath, String content){
-				try {
-					PrintWriter outPutcds = new PrintWriter(new BufferedWriter(new FileWriter(filePath, true)));
-					outPutcds.print(content);
-					outPutcds .close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			
-		}
-	}
+//
+//	class MyOutPut{
+//		public synchronized void myPrint(String filePath, String content){
+//				try {
+//					PrintWriter outPutcds = new PrintWriter(new BufferedWriter(new FileWriter(filePath, true)));
+//					outPutcds.print(content);
+//					outPutcds .close();
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//				}
+//
+//		}
+//	}
 }
