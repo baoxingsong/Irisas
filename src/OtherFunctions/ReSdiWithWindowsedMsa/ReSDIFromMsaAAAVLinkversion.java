@@ -64,8 +64,8 @@ public class ReSDIFromMsaAAAVLinkversion {
         helpMessage.append("  -o   output folder\n");
         helpMessage.append("  -g   the folder where the genome sequences and sdi files are located\n");
         helpMessage.append("  -m   merge cluster variants as single record (default: false)\n");
-        helpMessage.append("  -d   distance of variants to merge\n");
-        
+        helpMessage.append("  -d   distance of variants to merge (default: 0)\n");
+
 		Options options = new Options();
         options.addOption("t",true,"threadnumber");
         options.addOption("n",true,"numberOfAccessions");

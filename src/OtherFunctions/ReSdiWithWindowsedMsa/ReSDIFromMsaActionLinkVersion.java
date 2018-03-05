@@ -610,14 +610,15 @@ public class ReSDIFromMsaActionLinkVersion {
 
 							while (null != currOne) {
 								Data nextOne = currOne.getNext();
+
 								int lastOneLength=0;
 								if( lastOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") != 0 ){
-									lastOneLength += currOne.getMapSingleRecord().getOriginal().length();
+									lastOneLength = lastOne.getMapSingleRecord().getOriginal().length();
 								}
 								int lastOneEnd = lastOne.getMapSingleRecord().getBasement() + lastOneLength;
 								int gap_size = currOne.getMapSingleRecord().getBasement() - lastOneEnd;
 								if( currOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ){
-									++gap_size;
+									--gap_size;
 								}
 								if ( gap_size < (sizeOfGapForMerge) ){
 									int newStart = lastOne.getMapSingleRecord().getBasement();
@@ -667,8 +668,7 @@ public class ReSDIFromMsaActionLinkVersion {
 										lastOne.setNext(null);
 										currOne.setMapSingleRecord(mapSingleRecord2);
 										lastOne = currOne.getLast(); // here do not go forward
-									}
-									// delete last one end
+									}// delete last one end
 								} else {
 									lastOne = currOne;
 									currOne = nextOne;
