@@ -22,6 +22,8 @@ public class ReSDIFromMsaAAAVLinkversion {
     private ArrayList<String> chrs = new  ArrayList<String>();
     private String outPutPath;
     private String genomeFolder;
+    private boolean merge=false;
+    private int sizeOfGapForMerge=1;
 
     public void setThreadNumber(int threadNumber) {
         this.threadNumber = threadNumber;
@@ -61,6 +63,8 @@ public class ReSDIFromMsaAAAVLinkversion {
         helpMessage.append("  -c   list of chromosome names\n");
         helpMessage.append("  -o   output folder\n");
         helpMessage.append("  -g   the folder where the genome sequences and sdi files are located\n");
+        helpMessage.append("  -m   merge cluster variants as single record (default: false)\n");
+        helpMessage.append("  -d   distance of variants to merge\n");
         
 		Options options = new Options();
         options.addOption("t",true,"threadnumber");
@@ -71,7 +75,9 @@ public class ReSDIFromMsaAAAVLinkversion {
         options.addOption("c",true,"chrlist");
         options.addOption("o",true,"outPutPath");
         options.addOption("g",true,"genomeFolder");
-        
+        options.addOption("m",false,"merge");
+        options.addOption("d",true,"sizeOfGapForMerge");
+
         
         CommandLineParser parser = new PosixParser();
         CommandLine cmd=null;
@@ -132,6 +138,14 @@ public class ReSDIFromMsaAAAVLinkversion {
             System.exit(1);
         }
 
+        if( cmd.hasOption("m") ){
+            //System.err.println("the merge function is not implemented yet");
+            merge = true;
+            if( cmd.hasOption("d") ){
+                sizeOfGapForMerge = Integer.parseInt(cmd.getOptionValue("d"));
+                ++sizeOfGapForMerge;
+            }
+        }
 
         File file2 = new File(chrlist);
         BufferedReader reader2 = null;
@@ -221,7 +235,9 @@ public class ReSDIFromMsaAAAVLinkversion {
 						newNames.add(names.get(a));
 //						System.out.println(names.get(a));
 					}
-					new ReSDIFromMsaActionLinkVersion(newNames, msaFileLocationsHashmap, threadNumber, outPutPath + File.separator+ss1+File.separator, refName, genomeFolder, refChromoSomeRead);
+					new ReSDIFromMsaActionLinkVersion(newNames, msaFileLocationsHashmap, threadNumber,
+                            outPutPath + File.separator+ss1+File.separator, refName, genomeFolder,
+                            refChromoSomeRead, merge, sizeOfGapForMerge);
 				}
 			}
 		}

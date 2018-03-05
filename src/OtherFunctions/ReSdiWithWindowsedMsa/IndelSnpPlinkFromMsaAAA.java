@@ -15,6 +15,8 @@ public class IndelSnpPlinkFromMsaAAA {
     private String refName;
     private ArrayList<String> chrs = new  ArrayList<String>();
     private String genomeFolder;
+    private boolean merge=false;
+    private int sizeOfGapForMerge=0;
 
     public void setMsaFolder(String msaFolder) {
         this.msaFolder = msaFolder;
@@ -51,6 +53,8 @@ public class IndelSnpPlinkFromMsaAAA {
         options.addOption("r",true,"refName");
         options.addOption("c",true,"chrlist");
         options.addOption("g",true,"genomeFolder");
+        options.addOption("m",false,"merge");
+        options.addOption("s",true,"sizeOfGapForMerge");
         
         
         CommandLineParser parser = new PosixParser();
@@ -102,7 +106,13 @@ public class IndelSnpPlinkFromMsaAAA {
         	System.err.println(helpMessage);
             System.exit(1);
         }
-
+        if( cmd.hasOption("m") ){
+            System.err.println("the merge function is not implemented yet");
+            merge = true;
+            if( cmd.hasOption("s") ){
+                sizeOfGapForMerge = Integer.parseInt(cmd.getOptionValue("s"));
+            }
+        }
 
         File file2 = new File(chrlist);
         BufferedReader reader2 = null;
@@ -189,7 +199,7 @@ public class IndelSnpPlinkFromMsaAAA {
 				}
                 // get msa file list end
 
-                new IndelSnpPlinkFromMsaAction(names, msaFileLocationsHashmap, refName, genomeFolder, threadNumber);
+                new IndelSnpPlinkFromMsaAction(names, msaFileLocationsHashmap, refName, genomeFolder, threadNumber, merge, sizeOfGapForMerge);
 			}
 		}
 	}

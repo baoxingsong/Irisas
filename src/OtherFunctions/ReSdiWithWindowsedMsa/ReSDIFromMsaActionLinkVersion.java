@@ -28,16 +28,17 @@ public class ReSDIFromMsaActionLinkVersion {
 	private ArrayList<String> names;
 	private HashMap<String, ArrayList<String>> msaFileLocationsHashmap;
 	private int threadNumber;
-
 	
 	private HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap = new HashMap<String, ArrayList<MsaFileRecord>>();
 	private String outputDir;
 	
 	private String refName;
 	private String genomeFolder;
+	private boolean merge;
+	private int sizeOfGapForMerge;
 	private ChromoSomeReadService refChromoSomeRead;
 	public ReSDIFromMsaActionLinkVersion(ArrayList<String> names, HashMap<String, ArrayList<String>> msaFileLocationsHashmap, int threadNumber, String outputDir,
-		String refName, String genomeFolder, ChromoSomeReadService refChromoSomeRead){
+		String refName, String genomeFolder, ChromoSomeReadService refChromoSomeRead, boolean merge, int sizeOfGapForMerge){
 		this.names=names;
 		this.msaFileLocationsHashmap=msaFileLocationsHashmap;
 		this.threadNumber=threadNumber;
@@ -45,6 +46,8 @@ public class ReSDIFromMsaActionLinkVersion {
 		this.genomeFolder=genomeFolder;
 		this.refName = refName;
 		this.refChromoSomeRead = refChromoSomeRead;
+		this.merge=merge;
+		this.sizeOfGapForMerge=sizeOfGapForMerge;
 		this.doIt();
 		System.gc();
 	}
@@ -103,7 +106,7 @@ public class ReSDIFromMsaActionLinkVersion {
 			boolean isThisThreadUnrun=true;
 			while(isThisThreadUnrun){
                 if(threadCount.getCount() < threadNumber){
-                	NewSdiFile newSdiFile = new NewSdiFile(targetchromeSomeReadFileLocation, refChromoSomeRead, name, threadCount, msaFileRecordsHashMap, outputDir);
+                	NewSdiFile newSdiFile = new NewSdiFile(targetchromeSomeReadFileLocation, refChromoSomeRead, name, threadCount, msaFileRecordsHashMap, outputDir, merge, sizeOfGapForMerge);
                     threadCount.plusOne();
                     newSdiFile.start();
                     isThisThreadUnrun=false;
@@ -174,13 +177,20 @@ public class ReSDIFromMsaActionLinkVersion {
 		private MyThreadCount threadCount;
 		private HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap;
 		private String outputDir;
-		public NewSdiFile(String targetchromeSomeReadFileLocation, ChromoSomeReadService refChromoSomeRead, String name, MyThreadCount threadCount, HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap, String outputDir){
+		private boolean merge;
+		private int sizeOfGapForMerge;
+		public NewSdiFile(String targetchromeSomeReadFileLocation, ChromoSomeReadService refChromoSomeRead,
+						  String name, MyThreadCount threadCount,
+						  HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap,
+						  String outputDir, boolean merge, int sizeOfGapForMerge){
 			this.targetchromeSomeReadFileLocation=targetchromeSomeReadFileLocation;
 			this.refChromoSomeRead=refChromoSomeRead;
 			this.name=name;
 			this.threadCount=threadCount;
 			this.msaFileRecordsHashMap=msaFileRecordsHashMap;
 			this.outputDir=outputDir;
+			this.merge=merge;
+			this.sizeOfGapForMerge=sizeOfGapForMerge;
 		}
 		
 		public void run(){
@@ -268,51 +278,51 @@ public class ReSDIFromMsaActionLinkVersion {
 					
 					//	System.out.println(name+" size " + twoSeqOfMsaResults.size());
 					for( int j=1; j<twoSeqOfMsaResults.size(); j++ ){
-							if( twoSeqOfMsaResults.size() > 1 ){
-						//		System.out.println(name+" j " + j);
-								if( j<1 ){
-									j=1;
-								}
-		//						System.out.println(""+j + " begin");
-		//						System.out.println(j + " start " + twoSeqOfMsaResults.get(j).getResultStart() + " end " + twoSeqOfMsaResults.get(j).getResultEnd() );
-		//						System.out.println(j + " start " + twoSeqOfMsaResults.get(j).getRefStart() + " end " + twoSeqOfMsaResults.get(j).getRefEnd());
-								int lastEnd = twoSeqOfMsaResults.get(j-1).getResultEnd();
-								if( lastEnd >= twoSeqOfMsaResults.get(j).getResultStart() ){
-									int overLapLength = lastEnd - twoSeqOfMsaResults.get(j).getResultStart();
-									overLapLength++;
-									ArrayList<Character> oldSequence=twoSeqOfMsaResults.get(j).getResultSeq();
-									ArrayList<Character> newSequence=oldSequence;
-									int corrected = 0;
-									for( int t=0; t<oldSequence.size(); t++ ){
-										if(corrected<overLapLength && oldSequence.get(t)!='-'){
-											newSequence.set(t, '-');//=newSequence.subSequence(0, t)+"-"+newSequence.subSequence(t+1, newSequence.length());
-											corrected++;
-										}
-									}
-
-									int largetEnd;
-									if( twoSeqOfMsaResults.get(j).getResultEnd() > twoSeqOfMsaResults.get(j-1).getResultEnd() ){
-										largetEnd = twoSeqOfMsaResults.get(j).getResultEnd();
-									}else{
-										largetEnd = twoSeqOfMsaResults.get(j-1).getResultEnd();
-									}
-									ArrayList<Character> rt = twoSeqOfMsaResults.get(j-1).getRefSeq();
-									rt.addAll(twoSeqOfMsaResults.get(j).getRefSeq());
-
-									ArrayList<Character> tt = twoSeqOfMsaResults.get(j-1).getResultSeq();
-									tt.addAll(newSequence);
-
-									TwoSeqOfMsaResult twoSeqOfMsaResult = new TwoSeqOfMsaResult(twoSeqOfMsaResults.get(j-1).getRefStart(), twoSeqOfMsaResults.get(j).getRefEnd(), rt,
-											twoSeqOfMsaResults.get(j-1).getResultStart(),largetEnd, tt);
-									twoSeqOfMsaResults.set(j, twoSeqOfMsaResult);
-									twoSeqOfMsaResults.remove(j-1);
-		//							System.out.println("273 " + j);
-									j-=2;
-
-								}else if( twoSeqOfMsaResults.get(j).getResultStart() < twoSeqOfMsaResults.get(j-1).getResultStart() ){
-									System.out.println("to be complete 302 ");
-								}
+						if( twoSeqOfMsaResults.size() > 1 ){
+					//		System.out.println(name+" j " + j);
+							if( j<1 ){
+								j=1;
 							}
+	//						System.out.println(""+j + " begin");
+	//						System.out.println(j + " start " + twoSeqOfMsaResults.get(j).getResultStart() + " end " + twoSeqOfMsaResults.get(j).getResultEnd() );
+	//						System.out.println(j + " start " + twoSeqOfMsaResults.get(j).getRefStart() + " end " + twoSeqOfMsaResults.get(j).getRefEnd());
+							int lastEnd = twoSeqOfMsaResults.get(j-1).getResultEnd();
+							if( lastEnd >= twoSeqOfMsaResults.get(j).getResultStart() ){
+								int overLapLength = lastEnd - twoSeqOfMsaResults.get(j).getResultStart();
+								overLapLength++;
+								ArrayList<Character> oldSequence=twoSeqOfMsaResults.get(j).getResultSeq();
+								ArrayList<Character> newSequence=oldSequence;
+								int corrected = 0;
+								for( int t=0; t<oldSequence.size(); t++ ){
+									if(corrected<overLapLength && oldSequence.get(t)!='-'){
+										newSequence.set(t, '-');//=newSequence.subSequence(0, t)+"-"+newSequence.subSequence(t+1, newSequence.length());
+										corrected++;
+									}
+								}
+
+								int largetEnd;
+								if( twoSeqOfMsaResults.get(j).getResultEnd() > twoSeqOfMsaResults.get(j-1).getResultEnd() ){
+									largetEnd = twoSeqOfMsaResults.get(j).getResultEnd();
+								}else{
+									largetEnd = twoSeqOfMsaResults.get(j-1).getResultEnd();
+								}
+								ArrayList<Character> rt = twoSeqOfMsaResults.get(j-1).getRefSeq();
+								rt.addAll(twoSeqOfMsaResults.get(j).getRefSeq());
+
+								ArrayList<Character> tt = twoSeqOfMsaResults.get(j-1).getResultSeq();
+								tt.addAll(newSequence);
+
+								TwoSeqOfMsaResult twoSeqOfMsaResult = new TwoSeqOfMsaResult(twoSeqOfMsaResults.get(j-1).getRefStart(), twoSeqOfMsaResults.get(j).getRefEnd(), rt,
+										twoSeqOfMsaResults.get(j-1).getResultStart(),largetEnd, tt);
+								twoSeqOfMsaResults.set(j, twoSeqOfMsaResult);
+								twoSeqOfMsaResults.remove(j-1);
+	//							System.out.println("273 " + j);
+								j-=2;
+
+							}else if( twoSeqOfMsaResults.get(j).getResultStart() < twoSeqOfMsaResults.get(j-1).getResultStart() ){
+								System.out.println("to be complete 302 ");
+							}
+						}
 					}
 					
 					Collections.sort(twoSeqOfMsaResults);
@@ -550,7 +560,7 @@ public class ReSDIFromMsaActionLinkVersion {
 
 									MapSingleRecord mapSingleRecord2 = new MapSingleRecord(lastOne.getMapSingleRecord().getBasement(), lastOne.getMapSingleRecord().getChanged() + currOne.getMapSingleRecord().getChanged(),
 											lastOne.getMapSingleRecord().getOriginal() + currOne.getMapSingleRecord().getOriginal(), "-");
-									// merge to deletions
+									// merge two deletions
 									//delete last one begin
 									if (currOne.getLast().equals(sdiRecords.get(chrName).getFirst())) {
 										try {
@@ -593,6 +603,79 @@ public class ReSDIFromMsaActionLinkVersion {
 							}
 						}
 					//}
+					if( merge ){
+						if (sdiRecords.get(chrName).getFirst() != null && sdiRecords.get(chrName).getFirst().getNext() != null) {
+							Data lastOne = sdiRecords.get(chrName).getFirst();
+							Data currOne = sdiRecords.get(chrName).getFirst().getNext();
+
+							while (null != currOne) {
+								Data nextOne = currOne.getNext();
+								int lastOneLength=0;
+								if( lastOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") != 0 ){
+									lastOneLength += currOne.getMapSingleRecord().getOriginal().length();
+								}
+								int lastOneEnd = lastOne.getMapSingleRecord().getBasement() + lastOneLength;
+								int gap_size = currOne.getMapSingleRecord().getBasement() - lastOneEnd;
+								if( currOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ){
+									++gap_size;
+								}
+								if ( gap_size < (sizeOfGapForMerge) ){
+									int newStart = lastOne.getMapSingleRecord().getBasement();
+									StringBuffer referenceSeqBuffer = new StringBuffer();
+									if( lastOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ) {// if the last one is pure deletion, the new one is not pure deletion anymore
+										++newStart;
+									}else{
+										referenceSeqBuffer.append(lastOne.getMapSingleRecord().getOriginal());
+									}
+									StringBuffer midSeqBuffer = new StringBuffer();
+									for( int ind=0; ind<gap_size; ++ind ){
+										midSeqBuffer.append( refChromoSomeRead.getChromoSomeById(chrName).getSequence().charAt( newStart+ind) );
+									}
+									if( currOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ){
+										midSeqBuffer.append( refChromoSomeRead.getChromoSomeById(chrName).getSequence().charAt( newStart+gap_size) );
+									}
+									referenceSeqBuffer.append(midSeqBuffer);
+									if( currOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") != 0 ){
+										referenceSeqBuffer.append(currOne.getMapSingleRecord().getOriginal());
+									}
+
+									StringBuffer resultSeqBuffer = new StringBuffer();
+									if( lastOne.getMapSingleRecord().getResult().compareToIgnoreCase("-") != 0 ) {
+										resultSeqBuffer.append(lastOne.getMapSingleRecord().getResult());
+									}
+									resultSeqBuffer.append(midSeqBuffer);
+									if( currOne.getMapSingleRecord().getResult().compareToIgnoreCase("-") != 0 ){
+										resultSeqBuffer.append(currOne.getMapSingleRecord().getResult());
+									}
+									MapSingleRecord mapSingleRecord2 = new MapSingleRecord(newStart, resultSeqBuffer.length()-referenceSeqBuffer.length(),
+											referenceSeqBuffer.toString(), resultSeqBuffer.toString());
+
+									//delete last one begin
+									if (currOne.getLast().equals(sdiRecords.get(chrName).getFirst())) {
+										try {
+											sdiRecords.get(chrName).deleteFirst();
+										} catch (Exception e) {
+											e.printStackTrace();
+										}
+										currOne.setMapSingleRecord(mapSingleRecord2);
+										lastOne = currOne;
+										currOne = nextOne;
+									} else {
+										lastOne.getLast().setNext(currOne);
+										currOne.setLast(lastOne.getLast());
+										lastOne.setLast(null);
+										lastOne.setNext(null);
+										currOne.setMapSingleRecord(mapSingleRecord2);
+										lastOne = currOne.getLast(); // here do not go forward
+									}
+									// delete last one end
+								} else {
+									lastOne = currOne;
+									currOne = nextOne;
+								}
+							}
+						}
+					}
 					System.out.println(name + ": link data structure end");
 
 					/*

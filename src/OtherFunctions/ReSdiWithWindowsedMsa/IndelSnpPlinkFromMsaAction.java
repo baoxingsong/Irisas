@@ -27,15 +27,20 @@ public class IndelSnpPlinkFromMsaAction {
 	private HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap = new HashMap<String, ArrayList<MsaFileRecord>>();
 	private String refName;
 	private String genomeFolder;
+	private boolean merge; // the merge is not implemented yet
+	private int sizeOfGapForMerge;
 	public IndelSnpPlinkFromMsaAction(ArrayList<String> names, HashMap<String, ArrayList<MsaFile>> msaFileLocationsHashmap,
-                                      String refName, String genomeFolder, int threadNumber){
+                                      String refName, String genomeFolder, int threadNumber, boolean merge, int sizeOfGapForMerge){
 		this.names=names;
 		this.msaFileLocationsHashmap=msaFileLocationsHashmap;
 		this.genomeFolder=genomeFolder;
 		this.refName = refName;
 		this.threadNumber=threadNumber;
+		this.merge=merge;
+		this.sizeOfGapForMerge=sizeOfGapForMerge;
 		this.doIt();
 	}
+
 	private HashMap<Character, Integer> outputCode = new HashMap<Character, Integer>();
 
 	private int getDnaCode( char c ){
