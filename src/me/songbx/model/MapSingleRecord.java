@@ -105,6 +105,13 @@ public class MapSingleRecord implements Comparable<MapSingleRecord> {
 	public synchronized int getChanged() {
 		return changed;
 	}
+	public boolean ifPureSnp(){
+		if( this.changed==0 && this.original.length()==1 && this.original.compareToIgnoreCase("-")!=0 ){
+			return true;
+		}else{
+			return false;
+		}
+	}
 	public synchronized void setChanged(int changed) {
 		this.changed = changed;
 	}
