@@ -35,10 +35,11 @@ public class ReSDIFromMsaActionLinkVersion {
 	private String refName;
 	private String genomeFolder;
 	private boolean merge;
-	private int sizeOfGapForMerge;
+	private int sizeOfGapForSNPMerge;
+	private int sizeOfGapForINDELMerge;
 	private ChromoSomeReadService refChromoSomeRead;
 	public ReSDIFromMsaActionLinkVersion(ArrayList<String> names, HashMap<String, ArrayList<String>> msaFileLocationsHashmap, int threadNumber, String outputDir,
-		String refName, String genomeFolder, ChromoSomeReadService refChromoSomeRead, boolean merge, int sizeOfGapForMerge){
+		String refName, String genomeFolder, ChromoSomeReadService refChromoSomeRead, boolean merge, int sizeOfGapForSNPMerge, int sizeOfGapForINDELMerge){
 		this.names=names;
 		this.msaFileLocationsHashmap=msaFileLocationsHashmap;
 		this.threadNumber=threadNumber;
@@ -47,7 +48,8 @@ public class ReSDIFromMsaActionLinkVersion {
 		this.refName = refName;
 		this.refChromoSomeRead = refChromoSomeRead;
 		this.merge=merge;
-		this.sizeOfGapForMerge=sizeOfGapForMerge;
+		this.sizeOfGapForSNPMerge=sizeOfGapForSNPMerge;
+		this.sizeOfGapForINDELMerge=sizeOfGapForINDELMerge;
 		this.doIt();
 		System.gc();
 	}
@@ -106,7 +108,7 @@ public class ReSDIFromMsaActionLinkVersion {
 			boolean isThisThreadUnrun=true;
 			while(isThisThreadUnrun){
                 if(threadCount.getCount() < threadNumber){
-                	NewSdiFile newSdiFile = new NewSdiFile(targetchromeSomeReadFileLocation, refChromoSomeRead, name, threadCount, msaFileRecordsHashMap, outputDir, merge, sizeOfGapForMerge);
+                	NewSdiFile newSdiFile = new NewSdiFile(targetchromeSomeReadFileLocation, refChromoSomeRead, name, threadCount, msaFileRecordsHashMap, outputDir, merge, sizeOfGapForSNPMerge, sizeOfGapForINDELMerge);
                     threadCount.plusOne();
                     newSdiFile.start();
                     isThisThreadUnrun=false;
@@ -178,11 +180,12 @@ public class ReSDIFromMsaActionLinkVersion {
 		private HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap;
 		private String outputDir;
 		private boolean merge;
-		private int sizeOfGapForMerge;
+		private int sizeOfGapForSNPMerge;
+		private int sizeOfGapForINDELMerge;
 		public NewSdiFile(String targetchromeSomeReadFileLocation, ChromoSomeReadService refChromoSomeRead,
 						  String name, MyThreadCount threadCount,
 						  HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap,
-						  String outputDir, boolean merge, int sizeOfGapForMerge){
+						  String outputDir, boolean merge, int sizeOfGapForSNPMerge, int sizeOfGapForINDELMerge){
 			this.targetchromeSomeReadFileLocation=targetchromeSomeReadFileLocation;
 			this.refChromoSomeRead=refChromoSomeRead;
 			this.name=name;
@@ -190,7 +193,8 @@ public class ReSDIFromMsaActionLinkVersion {
 			this.msaFileRecordsHashMap=msaFileRecordsHashMap;
 			this.outputDir=outputDir;
 			this.merge=merge;
-			this.sizeOfGapForMerge=sizeOfGapForMerge;
+			this.sizeOfGapForSNPMerge=sizeOfGapForSNPMerge;
+			this.sizeOfGapForINDELMerge=sizeOfGapForINDELMerge;
 		}
 		
 		public void run(){
@@ -583,19 +587,39 @@ public class ReSDIFromMsaActionLinkVersion {
 								} else if (currOne.getMapSingleRecord().getChanged() == 0 && currOne.getMapSingleRecord().getOriginal().endsWith("-") && currOne.getMapSingleRecord().getResult().equals("-")) {
 									// delete current one
 									// delete records that gives no information
-									lastOne.setNext(currOne.getNext());
-									currOne.getNext().setLast(lastOne);
-									currOne.setLast(null);
-									currOne.setNext(null);
-									currOne = nextOne;
+									if( currOne == sdiRecords.get(chrName).getLast() ){
+                                        try {
+                                            sdiRecords.get(chrName).deleteLast();
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                        currOne = null;
+                                        lastOne.setNext(null);
+                                    }else {
+                                        lastOne.setNext(currOne.getNext());
+                                        currOne.getNext().setLast(lastOne);
+                                        currOne.setLast(null);
+                                        currOne.setNext(null);
+                                        currOne = nextOne;
+                                    }
 								} else if (currOne.getMapSingleRecord().getChanged() == 0 && currOne.getMapSingleRecord().getOriginal().equalsIgnoreCase(currOne.getMapSingleRecord().getResult())) {
 									//delete current one
 									// delete records that gives not information
-									lastOne.setNext(currOne.getNext());
-									currOne.getNext().setLast(lastOne);
-									currOne.setLast(null);
-									currOne.setNext(null);
-									currOne = nextOne;
+                                    if( currOne == sdiRecords.get(chrName).getLast() ){
+                                        try {
+                                            sdiRecords.get(chrName).deleteLast();
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                        currOne = null;
+                                        lastOne.setNext(null);
+                                    } else {
+                                        lastOne.setNext(currOne.getNext());
+                                        currOne.getNext().setLast(lastOne);
+                                        currOne.setLast(null);
+                                        currOne.setNext(null);
+                                        currOne = nextOne;
+                                    }
 								} else {
 									lastOne = currOne;
 									currOne = nextOne;
@@ -607,39 +631,61 @@ public class ReSDIFromMsaActionLinkVersion {
 						if (sdiRecords.get(chrName).getFirst() != null && sdiRecords.get(chrName).getFirst().getNext() != null) {
 							Data lastOne = sdiRecords.get(chrName).getFirst();
 							Data currOne = sdiRecords.get(chrName).getFirst().getNext();
+							int mergingBoundary;
+
+							if( lastOne.getMapSingleRecord().ifPureSnp() ){
+								mergingBoundary = lastOne.getMapSingleRecord().getBasement() + 1 + sizeOfGapForSNPMerge;
+							}else if( lastOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ){
+								mergingBoundary = lastOne.getMapSingleRecord().getBasement() + sizeOfGapForINDELMerge;
+							}else{
+								mergingBoundary = lastOne.getMapSingleRecord().getBasement() + lastOne.getMapSingleRecord().getOriginal().length() + sizeOfGapForINDELMerge;
+							}
 
 							while (null != currOne) {
 								Data nextOne = currOne.getNext();
-
-								int lastOneLength=0;
-								if( lastOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") != 0 ){
+								int lastOneLength;
+								if( lastOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ){
+									lastOneLength=0;
+								}else{
 									lastOneLength = lastOne.getMapSingleRecord().getOriginal().length();
 								}
 								int lastOneEnd = lastOne.getMapSingleRecord().getBasement() + lastOneLength;
 								int gap_size = currOne.getMapSingleRecord().getBasement() - lastOneEnd;
-								if( currOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ){
-									--gap_size;
-								}
-								if ( gap_size < (sizeOfGapForMerge) ){
+//                                if( gap_size < 0 ){
+//                                    System.out.println(lastOne.getMapSingleRecord().toString());
+//                                    System.out.println(currOne.getMapSingleRecord().toString());
+//                                    System.out.println();
+//                                }
+								if ( mergingBoundary >= currOne.getMapSingleRecord().getBasement() ){
+                                	//update mergingBoundary begin
+									int new_mergingBoundary;
+
+									if( currOne.getMapSingleRecord().ifPureSnp() ){
+										new_mergingBoundary = currOne.getMapSingleRecord().getBasement() + 1 + sizeOfGapForSNPMerge;
+									}else if( currOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ){
+										new_mergingBoundary = currOne.getMapSingleRecord().getBasement() + sizeOfGapForINDELMerge;
+									}else{
+										new_mergingBoundary = currOne.getMapSingleRecord().getBasement() + currOne.getMapSingleRecord().getOriginal().length() + sizeOfGapForINDELMerge;
+									}
+									if( new_mergingBoundary> mergingBoundary ){
+										mergingBoundary = new_mergingBoundary;
+									}
+									//update mergingBoundary end
+
 									int newStart = lastOne.getMapSingleRecord().getBasement();
 									StringBuffer referenceSeqBuffer = new StringBuffer();
-									if( lastOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ) {// if the last one is pure deletion, the new one is not pure deletion anymore
-										++newStart;
+									if( lastOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ) {// if the last one is pure insertion, the new one is not pure insertion anymore
 									}else{
 										referenceSeqBuffer.append(lastOne.getMapSingleRecord().getOriginal());
 									}
 									StringBuffer midSeqBuffer = new StringBuffer();
 									for( int ind=0; ind<gap_size; ++ind ){
-										midSeqBuffer.append( refChromoSomeRead.getChromoSomeById(chrName).getSequence().charAt( newStart+ind) );
-									}
-									if( currOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ){
-										midSeqBuffer.append( refChromoSomeRead.getChromoSomeById(chrName).getSequence().charAt( newStart+gap_size) );
+										midSeqBuffer.append( refChromoSomeRead.getChromoSomeById(chrName).getSequence().charAt( lastOneEnd-1+ind) );
 									}
 									referenceSeqBuffer.append(midSeqBuffer);
 									if( currOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") != 0 ){
 										referenceSeqBuffer.append(currOne.getMapSingleRecord().getOriginal());
 									}
-
 									StringBuffer resultSeqBuffer = new StringBuffer();
 									if( lastOne.getMapSingleRecord().getResult().compareToIgnoreCase("-") != 0 ) {
 										resultSeqBuffer.append(lastOne.getMapSingleRecord().getResult());
@@ -648,7 +694,9 @@ public class ReSDIFromMsaActionLinkVersion {
 									if( currOne.getMapSingleRecord().getResult().compareToIgnoreCase("-") != 0 ){
 										resultSeqBuffer.append(currOne.getMapSingleRecord().getResult());
 									}
-									MapSingleRecord mapSingleRecord2 = new MapSingleRecord(newStart, resultSeqBuffer.length()-referenceSeqBuffer.length(),
+									int changedLength = resultSeqBuffer.length()-referenceSeqBuffer.length();
+									assert (changedLength == (lastOne.getMapSingleRecord().getChanged()+currOne.getMapSingleRecord().getChanged()) );
+									MapSingleRecord mapSingleRecord2 = new MapSingleRecord(newStart, changedLength,
 											referenceSeqBuffer.toString(), resultSeqBuffer.toString());
 
 									//delete last one begin
@@ -667,8 +715,53 @@ public class ReSDIFromMsaActionLinkVersion {
 										lastOne.setLast(null);
 										lastOne.setNext(null);
 										currOne.setMapSingleRecord(mapSingleRecord2);
-										lastOne = currOne.getLast(); // here do not go forward
+										lastOne=currOne;
+										currOne=lastOne.getNext();
 									}// delete last one end
+								} else {
+									//update mergingBoundary begin
+									int new_mergingBoundary;
+
+									if( currOne.getMapSingleRecord().ifPureSnp() ){
+										new_mergingBoundary = currOne.getMapSingleRecord().getBasement() + 1 + sizeOfGapForSNPMerge;
+									}else if( currOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") == 0 ){
+										new_mergingBoundary = currOne.getMapSingleRecord().getBasement() + sizeOfGapForINDELMerge;
+									}else{
+										new_mergingBoundary = currOne.getMapSingleRecord().getBasement() + currOne.getMapSingleRecord().getOriginal().length() + sizeOfGapForINDELMerge;
+									}
+
+									if( new_mergingBoundary> mergingBoundary ){
+										mergingBoundary = new_mergingBoundary;
+									}
+									//update mergingBoundary end
+
+									lastOne = currOne;
+									currOne = nextOne;
+								}
+							}
+						}
+						if (sdiRecords.get(chrName).getFirst() != null && sdiRecords.get(chrName).getFirst().getNext() != null) {
+							Data lastOne = sdiRecords.get(chrName).getFirst();
+							Data currOne = sdiRecords.get(chrName).getFirst().getNext();
+							while (null != currOne) {
+								Data nextOne = currOne.getNext();
+								if (currOne.getMapSingleRecord().getChanged() == 0 && currOne.getMapSingleRecord().getOriginal().equalsIgnoreCase(currOne.getMapSingleRecord().getResult())) {
+									//delete current one
+									// delete records that gives no information
+                                    if( currOne == sdiRecords.get(chrName).getLast() ){
+                                        try {
+                                            sdiRecords.get(chrName).deleteLast();
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                        currOne = null;
+                                    }else {
+                                        lastOne.setNext(currOne.getNext());
+                                        currOne.getNext().setLast(lastOne);
+                                        currOne.setLast(null);
+                                        currOne.setNext(null);
+                                        currOne = nextOne;
+                                    }
 								} else {
 									lastOne = currOne;
 									currOne = nextOne;

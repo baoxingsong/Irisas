@@ -62,7 +62,8 @@ public class IndelSnpPlinkFromMsaAction {
 
 				}else{
 					try {
-						Process p = new ProcessBuilder("samtools faidx " + fastaPath).start();
+						String[] command = {"samtools", "faidx", "fastaPath"};
+						Process p = new ProcessBuilder(command).start();
                         p.waitFor();
 					}catch (final Exception e) {
 						System.err.print("genome sequence index file could not be created");

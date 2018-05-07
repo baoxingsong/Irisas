@@ -23,7 +23,8 @@ public class ReSDIFromMsaAAAVLinkversion {
     private String outPutPath;
     private String genomeFolder;
     private boolean merge=false;
-    private int sizeOfGapForMerge=1;
+    private int sizeOfGapForSNPMerge=1;
+    private int sizeOfGapForINDELMerge=1;
 
     public void setThreadNumber(int threadNumber) {
         this.threadNumber = threadNumber;
@@ -63,8 +64,9 @@ public class ReSDIFromMsaAAAVLinkversion {
         helpMessage.append("  -c   list of chromosome names\n");
         helpMessage.append("  -o   output folder\n");
         helpMessage.append("  -g   the folder where the genome sequences and sdi files are located\n");
-        helpMessage.append("  -m   merge cluster variants as single record (default: false)\n");
-        helpMessage.append("  -d   distance of variants to merge (default: 0)\n");
+        helpMessage.append("  -m   merge cluster variants as single record (default: false), useful for population genetics analysis\n");
+        helpMessage.append("  -d   distance of INDELs for merging (default: 1)\n");
+        helpMessage.append("  -s   distance of SNPs for merging (default: 1)\n");
 
 		Options options = new Options();
         options.addOption("t",true,"threadnumber");
@@ -76,7 +78,8 @@ public class ReSDIFromMsaAAAVLinkversion {
         options.addOption("o",true,"outPutPath");
         options.addOption("g",true,"genomeFolder");
         options.addOption("m",false,"merge");
-        options.addOption("d",true,"sizeOfGapForMerge");
+        options.addOption("d",true,"sizeOfGapForIndelMerge");
+        options.addOption("s",true,"sizeOfGapForSNPMerge");
 
         
         CommandLineParser parser = new PosixParser();
@@ -142,8 +145,16 @@ public class ReSDIFromMsaAAAVLinkversion {
             //System.err.println("the merge function is not implemented yet");
             merge = true;
             if( cmd.hasOption("d") ){
-                sizeOfGapForMerge = Integer.parseInt(cmd.getOptionValue("d"));
-                ++sizeOfGapForMerge;
+                sizeOfGapForINDELMerge = Integer.parseInt(cmd.getOptionValue("d"));
+                ++sizeOfGapForINDELMerge;
+            }
+            if( cmd.hasOption("s") ){
+                sizeOfGapForSNPMerge = Integer.parseInt(cmd.getOptionValue("s"));
+                ++sizeOfGapForSNPMerge;
+            }
+            if( sizeOfGapForSNPMerge > sizeOfGapForINDELMerge ){
+                System.err.println("Warning: the distance for SNP merging is expected to be smaller than the distance for INDEL merging. " +
+                        "I will go ahead with the parameters you specified.");
             }
         }
 
@@ -153,7 +164,9 @@ public class ReSDIFromMsaAAAVLinkversion {
             reader2 = new BufferedReader(new FileReader(file2));
             String tempString = null;
             while ((tempString = reader2.readLine()) != null) {
-                chrs.add(tempString);
+                if( tempString.length() > 0 ) {
+                    chrs.add(tempString);
+                }
             }
         }catch (IOException e) {
             e.printStackTrace();
@@ -179,7 +192,9 @@ public class ReSDIFromMsaAAAVLinkversion {
         	reader = new BufferedReader(new FileReader(file));
             String tempString = null;
             while ((tempString = reader.readLine()) != null) {
-            	names.add(tempString);
+                if( tempString.length() > 0 && tempString.compareTo(refName) != 0 ) {
+                    names.add(tempString);
+                }
             }
             names.add(refName);
         }catch (IOException e) {
@@ -237,7 +252,7 @@ public class ReSDIFromMsaAAAVLinkversion {
 					}
 					new ReSDIFromMsaActionLinkVersion(newNames, msaFileLocationsHashmap, threadNumber,
                             outPutPath + File.separator+ss1+File.separator, refName, genomeFolder,
-                            refChromoSomeRead, merge, sizeOfGapForMerge);
+                            refChromoSomeRead, merge, sizeOfGapForSNPMerge, sizeOfGapForINDELMerge);
 				}
 			}
 		}
