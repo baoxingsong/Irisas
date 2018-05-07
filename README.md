@@ -46,6 +46,9 @@ There are two main modules in this packages. INDEL and other variant synchroniza
 java -jar Irisas.jar
 
 Commands:
+  -- One command for all the steps
+
+     EasyRun  run all the steps with single command
 
   -- Functions for whole genome wide variant synchronization
 
@@ -54,15 +57,21 @@ Commands:
      SdiToSnpPlink                   generate PLINK files of SNP
      SdiToIndelPlink                 generate PLINK files of INDEL
 
-
   -- Functions for integrating effect
 
      ExtractCdsSequenceAndCheckFunc  extract CDS&protein sequence
      ExtractGenomeSequce             extract the genome sequence of each transcript
      GenerateLofPed                  generate PLINK files of integrating effect
-     
-  -- One command for all the steps
-     EasyRun                         run all the above steps with single command
+
+  -- Several advanced testing functions (under testing)
+
+     SdiSnpToPedMultipleAllic		 generate tped files of SNP with multiallelic enable
+     SdiIndelToPedMultipleAllic      generate tped files of INDEL with multiallelic enable
+     SdiIndelToPedWithDecomposition  generate tped files of SNP/INDEL with multiallelic enable
+     IndelSnpPlinkFromMsa			 generate tped files of SNP/INDEL, taking MSA result as input. with multiallelic enable
+     IndelPlinkFromMsa				 generate tped files of INDEL, taking MSA result as input. with multiallelic enable
+
+
 ````
 ## Run the pipeline with one command
 ````
