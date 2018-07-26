@@ -51,7 +51,7 @@ public class Gene implements Comparable<Gene>{
 		this.chromesomeName = chromesomeName;
 	}
 	@Override
-	public int compareTo(Gene arg0) {
+	public synchronized int compareTo(Gene arg0) {
 		Gene e0 = this;
 		Gene e1 = arg0;
 		if(e0.getStart() == e1.getStart() && e0.getEnd() == e1.getEnd()){

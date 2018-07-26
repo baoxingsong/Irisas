@@ -26,16 +26,16 @@ public class ExtractCdsSequenceAndCheckORF {
 	public ExtractCdsSequenceAndCheckORF( ){
 
 	}
-	public void setReferenceGenome(String referenceGenome) {
+	public synchronized void setReferenceGenome(String referenceGenome) {
 		this.referenceGenome = referenceGenome;
 	}
-	public void setGffFile(String gffFile) {
+	public synchronized void setGffFile(String gffFile) {
 		this.gffFile = gffFile;
 	}
-	public void setCdsOutPutFolder(String cdsOutPutFolder) {
+	public synchronized void setCdsOutPutFolder(String cdsOutPutFolder) {
 		this.cdsOutPutFolder = cdsOutPutFolder;
 	}
-	public void setProteinOutPutFolder(String proteinOutPutFolder) {
+	public synchronized void setProteinOutPutFolder(String proteinOutPutFolder) {
 		this.proteinOutPutFolder = proteinOutPutFolder;
 	}
 

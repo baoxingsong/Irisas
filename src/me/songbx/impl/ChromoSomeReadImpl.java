@@ -1,9 +1,6 @@
 package me.songbx.impl;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -11,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import me.songbx.model.ChromoSome;
+import me.songbx.model.FastaIndexEntry;
 import me.songbx.model.Strand;
 
 /**
@@ -26,7 +24,45 @@ public class ChromoSomeReadImpl {
 	/**
 	 * @param the location of fasta or multiple fasta format file. The meta-line should be like ">Chr2"
 	 */
-	public ChromoSomeReadImpl(String fileLocation) {
+	public ChromoSomeReadImpl(String fastaFileLocation) {
+		FastaIndexEntryImpl fastaIndexEntryImpl = new FastaIndexEntryImpl();
+		RandomAccessFile reader = null;
+
+		String fastaIndexFileLocation = fastaFileLocation + ".fai";
+		File f = new File(fastaIndexFileLocation);
+		if(f.exists() && !f.isDirectory()) {
+			fastaIndexEntryImpl.readFastaIndexFile(fastaIndexFileLocation);
+		}else {
+			fastaIndexEntryImpl.createFastaIndexFile(fastaFileLocation);
+		}
+		File file = new File(fastaFileLocation);
+		try {
+			reader = new RandomAccessFile(file, "r");
+
+			for ( String name : fastaIndexEntryImpl.getEntries().keySet() ) {
+				FastaIndexEntry entry = fastaIndexEntryImpl.getEntries().get(name);
+				int newlines_in_sequence = entry.getLength()/entry.getLine_blen();
+				int seqlen = newlines_in_sequence + entry.getLength();
+				byte[] b = new byte[seqlen];
+				try {
+					reader.seek(entry.getOffset());
+					reader.read(b);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				String seq = new String(b);
+				seq = seq.replaceAll("\\s", "");
+
+				ChromoSome c = new ChromoSome(name, seq);
+				chromoSomeHashMap.put(name, c);
+			}
+			reader.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+
+		/*
 		File file = new File(fileLocation);
 		BufferedReader reader = null;
 		try {
@@ -70,7 +106,7 @@ public class ChromoSomeReadImpl {
 
 				}
 			}
-		}
+		}*/
 	}
 	
 	/**
@@ -207,5 +243,4 @@ public class ChromoSomeReadImpl {
 		String t = chromoSomeReadImpl.getSubSequence("NSCAFB.163", 200,  269, Strand.POSITIVE);
 		System.out.println(t);
 	}
-	
 }

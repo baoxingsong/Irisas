@@ -1,14 +1,14 @@
 package OtherFunctions.ReSdiWithWindowsedMsa;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import OtherFunctions.ReSdiWithWindowsedMsa.FirstLastList.Data;
 import me.songbx.action.parallel.model.MsaFileRecordArrayList;
@@ -20,13 +20,14 @@ import me.songbx.model.MsaSingleRecord;
 import me.songbx.model.Strand;
 import me.songbx.model.TwoSeqOfMsaResult;
 import me.songbx.service.ChromoSomeReadService;
+import me.songbx.service.ChromoSomeReadServiceWithIndex;
 import me.songbx.util.MyThreadCount;
 /**
  * this is the link version much faster than array list version 
  */
 public class ReSDIFromMsaActionLinkVersion {
 	private ArrayList<String> names;
-	private HashMap<String, ArrayList<String>> msaFileLocationsHashmap;
+	private ArrayList<String> msaFileLocations;
 	private int threadNumber;
 	
 	private HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap = new HashMap<String, ArrayList<MsaFileRecord>>();
@@ -38,25 +39,33 @@ public class ReSDIFromMsaActionLinkVersion {
 	private int sizeOfGapForSNPMerge;
 	private int sizeOfGapForINDELMerge;
 	private ChromoSomeReadService refChromoSomeRead;
-	public ReSDIFromMsaActionLinkVersion(ArrayList<String> names, HashMap<String, ArrayList<String>> msaFileLocationsHashmap, int threadNumber, String outputDir,
-		String refName, String genomeFolder, ChromoSomeReadService refChromoSomeRead, boolean merge, int sizeOfGapForSNPMerge, int sizeOfGapForINDELMerge){
+	private String referenceGenomePath;
+	private int chrIndex;
+	private String chrName;
+	public ReSDIFromMsaActionLinkVersion(ArrayList<String> names, ArrayList<String> msaFileLocations, int threadNumber, String outputDir,
+		String refName, String genomeFolder, ChromoSomeReadService refChromoSomeRead, String referenceGenomePath, boolean merge, int sizeOfGapForSNPMerge, int sizeOfGapForINDELMerge, int chrIndex, String chrName){
 		this.names=names;
-		this.msaFileLocationsHashmap=msaFileLocationsHashmap;
+		this.msaFileLocations=msaFileLocations;
 		this.threadNumber=threadNumber;
 		this.outputDir=outputDir;
 		this.genomeFolder=genomeFolder;
 		this.refName = refName;
 		this.refChromoSomeRead = refChromoSomeRead;
+		this.referenceGenomePath=referenceGenomePath;
 		this.merge=merge;
 		this.sizeOfGapForSNPMerge=sizeOfGapForSNPMerge;
 		this.sizeOfGapForINDELMerge=sizeOfGapForINDELMerge;
+		this.chrIndex=chrIndex;
+		this.chrName=chrName;
 		this.doIt();
 		System.gc();
 	}
 
 	private void doIt(){
-		Iterator<String> chrNameI = msaFileLocationsHashmap.keySet().iterator();
+//		Iterator<String> chrNameI = msaFileLocationsHashmap.keySet().iterator();
+		/*
 		while(chrNameI.hasNext()){
+
 			String chrName = chrNameI.next();
 			ArrayList<String> msaFileLocations = msaFileLocationsHashmap.get(chrName);
 			MsaFileRecordArrayList msaFileRecordArrayList = new MsaFileRecordArrayList();
@@ -90,16 +99,31 @@ public class ReSDIFromMsaActionLinkVersion {
 			}
 			msaFileRecordArrayList.sort();
 			msaFileRecordsHashMap.put(chrName, msaFileRecordArrayList.getMsaFileRecords());
+		}*/
+
+		MsaFileRecordArrayList msaFileRecordArrayList = new MsaFileRecordArrayList();
+		ExecutorService myExecutor = Executors.newFixedThreadPool(threadNumber);
+		for(String msaFileLocation : msaFileLocations){
+			myExecutor.execute(new MsaFileRead(msaFileLocation, msaFileRecordArrayList, names));
 		}
+		System.gc();
+		myExecutor.shutdown();
+		try {
+			myExecutor.awaitTermination(2, TimeUnit.HOURS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		msaFileRecordArrayList.sort();
+		msaFileRecordsHashMap.put(chrName, msaFileRecordArrayList.getMsaFileRecords());
+
+
 		//modified on 26 May 2016
-		for(String chrName : msaFileLocationsHashmap.keySet()){
-			ArrayList<MsaFileRecord> msaFileRecords = msaFileRecordsHashMap.get(chrName);
-			Collections.sort(msaFileRecords);
-			msaFileRecordsHashMap.put(chrName, msaFileRecords);
-		}
+		ArrayList<MsaFileRecord> msaFileRecords = msaFileRecordsHashMap.get(chrName);
+		Collections.sort(msaFileRecords);
+		msaFileRecordsHashMap.put(chrName, msaFileRecords);
 		System.out.println("multiple sequences alignment reading is done");
 		
-
+		/*
 		MyThreadCount threadCount = new MyThreadCount(0);
 		for(String name : names){
 			String targetchromeSomeReadFileLocation;
@@ -129,6 +153,19 @@ public class ReSDIFromMsaActionLinkVersion {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+		}*/
+		ExecutorService myExecutor1 = Executors.newFixedThreadPool(threadNumber);
+		for(String name : names){
+			String targetchromeSomeReadFileLocation;
+			targetchromeSomeReadFileLocation = genomeFolder + File.separator + name + ".fa";
+			myExecutor1.execute(new NewSdiFile(targetchromeSomeReadFileLocation, referenceGenomePath, name, msaFileRecordsHashMap, outputDir, merge, sizeOfGapForSNPMerge, sizeOfGapForINDELMerge, chrIndex));
+		}
+		System.gc();
+		myExecutor1.shutdown();
+		try {
+			myExecutor1.awaitTermination(2, TimeUnit.HOURS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -138,13 +175,7 @@ public class ReSDIFromMsaActionLinkVersion {
 	public synchronized void setNames(ArrayList<String> names) {
 		this.names = names;
 	}
-	public synchronized HashMap<String, ArrayList<String>> getMsaFileLocationsHashmap() {
-		return msaFileLocationsHashmap;
-	}
-	public synchronized void setMsaFileLocationsHashmap(
-			HashMap<String, ArrayList<String>> msaFileLocationsHashmap) {
-		this.msaFileLocationsHashmap = msaFileLocationsHashmap;
-	}
+
 	public synchronized HashMap<String, ArrayList<MsaFileRecord>> getMsaFileRecordsHashMap() {
 		return msaFileRecordsHashMap;
 	}
@@ -155,55 +186,62 @@ public class ReSDIFromMsaActionLinkVersion {
 	class MsaFileRead extends Thread{
 		private String msaFileLocation;
 		private MsaFileRecordArrayList msaFileRecordArrayList;
-		private MyThreadCount threadCount;
+		//private MyThreadCount threadCount;
 		private HashSet<String> names = new HashSet<String>();
 		
-		public MsaFileRead(String msaFileLocation, MsaFileRecordArrayList msaFileRecordArrayList, MyThreadCount threadCount, ArrayList<String> names){
+		public MsaFileRead(String msaFileLocation, MsaFileRecordArrayList msaFileRecordArrayList, /*MyThreadCount threadCount,*/ ArrayList<String> names){
 			this.msaFileLocation=msaFileLocation;
 			this.msaFileRecordArrayList=msaFileRecordArrayList;
-			this.threadCount=threadCount;
+			//this.threadCount=threadCount;
 			this.names.addAll(names);
 			this.names.add(refName);
 		}
 		public void run(){
 			MsaFileReadImpl msaFileReadImpl = new MsaFileReadImpl(msaFileLocation, names);
 			msaFileRecordArrayList.add(msaFileReadImpl.getMsaFileRecord());
-			threadCount.countDown();
+			//threadCount.countDown();
 		}
 	}
 	
 	class NewSdiFile extends Thread{
 		private String targetchromeSomeReadFileLocation;
-		private ChromoSomeReadService refChromoSomeRead;
+		private String referenceGenomePath;
 		private String name;
-		private MyThreadCount threadCount;
+		//private MyThreadCount threadCount;
 		private HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap;
 		private String outputDir;
 		private boolean merge;
 		private int sizeOfGapForSNPMerge;
 		private int sizeOfGapForINDELMerge;
-		public NewSdiFile(String targetchromeSomeReadFileLocation, ChromoSomeReadService refChromoSomeRead,
-						  String name, MyThreadCount threadCount,
+		private int chrIndex;
+		public NewSdiFile(String targetchromeSomeReadFileLocation, String referenceGenomePath,
+						  String name, /*MyThreadCount threadCount,*/
 						  HashMap<String, ArrayList<MsaFileRecord>> msaFileRecordsHashMap,
-						  String outputDir, boolean merge, int sizeOfGapForSNPMerge, int sizeOfGapForINDELMerge){
+						  String outputDir, boolean merge, int sizeOfGapForSNPMerge, int sizeOfGapForINDELMerge, int chrIndex){
 			this.targetchromeSomeReadFileLocation=targetchromeSomeReadFileLocation;
-			this.refChromoSomeRead=refChromoSomeRead;
+			this.referenceGenomePath=referenceGenomePath;
 			this.name=name;
-			this.threadCount=threadCount;
+			//this.threadCount=threadCount;
 			this.msaFileRecordsHashMap=msaFileRecordsHashMap;
 			this.outputDir=outputDir;
 			this.merge=merge;
 			this.sizeOfGapForSNPMerge=sizeOfGapForSNPMerge;
 			this.sizeOfGapForINDELMerge=sizeOfGapForINDELMerge;
+			this.chrIndex = chrIndex;
 		}
 		
 		public void run(){
+			ChromoSomeReadServiceWithIndex refChromoSomeRead = new ChromoSomeReadServiceWithIndex(referenceGenomePath);
 			System.out.println(name + " begin");
-			ChromoSomeReadService chromoSomeRead = new ChromoSomeReadService(targetchromeSomeReadFileLocation);
+			ChromoSomeReadServiceWithIndex chromoSomeRead = new ChromoSomeReadServiceWithIndex(targetchromeSomeReadFileLocation);
 			HashMap<String, FirstLastList> sdiRecords = new HashMap<String, FirstLastList>();
 			HashMap<String, ArrayList<MapSingleRecord>> sdiRecordsArrays = new HashMap<String, ArrayList<MapSingleRecord>>();
-			HashMap<String, ChromoSome> chromoSomeHashMap = chromoSomeRead.getChromoSomeHashMap();
-			for(String chrName : chromoSomeHashMap.keySet()){
+//			HashMap<String, ChromoSome> chromoSomeHashMap = chromoSomeRead.getChromoSomeHashMap();
+			//for(String chrName : chromoSomeHashMap.keySet()){
+			for(String chrName : chromoSomeRead.getFastaIndexEntryImpl().getEntries().keySet()){
+
+				String theTargetSequenceOfThisChr = chromoSomeRead.getChromoSomeById(chrName);
+
 				if(!sdiRecords.containsKey(chrName)){
 					sdiRecords.put(chrName, new FirstLastList());
 				}
@@ -265,7 +303,8 @@ public class ReSDIFromMsaActionLinkVersion {
 								}
 							}
 							if( (i==(msaFileRecords.size()-1)) && targetTranscriptEnd == 0 ){
-								targetTranscriptEnd = chromoSomeRead.getChromoSomeById(chrName).getSequence().length();
+								//targetTranscriptEnd = chromoSomeRead.getChromoSomeById(chrName).getSequence().length();
+								targetTranscriptEnd = chromoSomeRead.getFastaIndexEntryImpl().getEntries().get(chrName).getLength();
 							}
 						//	System.out.println("249 \t" + transcriptStart+" "+transcriptEnd+" "+refSeq+" "+targetTranscriptStart+" "+targetTranscriptEnd+" "+targetSeq);
 							//refSeq=refSeq.toUpperCase();
@@ -480,16 +519,16 @@ public class ReSDIFromMsaActionLinkVersion {
 					int endIndex = twoSeqOfMsaResults.size()-1;
 					String oriSeq=null;
 					int oriSeqLength=0;
-					if((twoSeqOfMsaResults.get(endIndex).getRefEnd()) < refChromoSomeRead.getChromoSomeById(chrName).getSequence().length()){
-						oriSeq = refChromoSomeRead.getSubSequence(chrName, twoSeqOfMsaResults.get(endIndex).getRefEnd()+1, refChromoSomeRead.getChromoSomeById(chrName).getSequence().length(), Strand.POSITIVE);
+					if((twoSeqOfMsaResults.get(endIndex).getRefEnd()) < refChromoSomeRead.getFastaIndexEntryImpl().getEntries().get(chrName).getLength()){
+						oriSeq = refChromoSomeRead.getSubSequence(chrName, twoSeqOfMsaResults.get(endIndex).getRefEnd()+1, refChromoSomeRead.getFastaIndexEntryImpl().getEntries().get(chrName).getLength(), Strand.POSITIVE);
 						oriSeqLength=oriSeq.length();
 					}else{
 						oriSeq="";
 					}
 					
-					if(twoSeqOfMsaResults.get(endIndex).getResultEnd() < (chromoSomeRead.getChromoSomeById(chrName).getSequence().length()-1)){
+					if(twoSeqOfMsaResults.get(endIndex).getResultEnd() < (chromoSomeRead.getFastaIndexEntryImpl().getEntries().get(chrName).getLength()-1)){
 //						System.out.println("endIndex" + endIndex + " " + chrName + " " + twoSeqOfMsaResults.get(endIndex).getResultEnd() + " " +(chromoSomeRead.getChromoSomeById(chrName).getSequence().length()-1) );
-						String resultSeq = chromoSomeRead.getSubSequence(chrName, twoSeqOfMsaResults.get(endIndex).getResultEnd()+1, chromoSomeRead.getChromoSomeById(chrName).getSequence().length(), Strand.POSITIVE);
+						String resultSeq = chromoSomeRead.getSubSequence(chrName, twoSeqOfMsaResults.get(endIndex).getResultEnd()+1, chromoSomeRead.getFastaIndexEntryImpl().getEntries().get(chrName).getLength(), Strand.POSITIVE);
 						int changedLength1 = resultSeq.length()-oriSeqLength;
 						mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(endIndex).getRefEnd()+1, changedLength1, oriSeq, resultSeq);
 						if(!oriSeq.equalsIgnoreCase(resultSeq)){
@@ -497,12 +536,12 @@ public class ReSDIFromMsaActionLinkVersion {
 						}
 				//		System.out.println(447 + " " + 1);
 					//	System.out.println("447"+mapSingleRecord.getOriginal() +"\t"+mapSingleRecord.getResult());
-					}else if(twoSeqOfMsaResults.get(endIndex).getResultEnd() == (chromoSomeRead.getChromoSomeById(chrName).getSequence().length()-1)){
-						mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(endIndex).getRefEnd()+1, 0-oriSeqLength+1, oriSeq, ""+chromoSomeRead.getChromoSomeById(chrName).getSequence().charAt(chromoSomeRead.getChromoSomeById(chrName).getSequence().length()-1));
+					}else if(twoSeqOfMsaResults.get(endIndex).getResultEnd() == (chromoSomeRead.getFastaIndexEntryImpl().getEntries().get(chrName).getLength()-1)){
+						mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(endIndex).getRefEnd()+1, 0-oriSeqLength+1, oriSeq, ""+theTargetSequenceOfThisChr.charAt(chromoSomeRead.getFastaIndexEntryImpl().getEntries().get(chrName).getLength()-1));
 						sdiRecords.get(chrName).insertLast(mapSingleRecord);
 						//System.out.println(450 + " " + 2);
 				//		System.out.println("450"+mapSingleRecord.getOriginal() +"\t"+mapSingleRecord.getResult());
-					}else if(twoSeqOfMsaResults.get(endIndex).getResultEnd() == (chromoSomeRead.getChromoSomeById(chrName).getSequence().length()) && oriSeq.length()>0){
+					}else if(twoSeqOfMsaResults.get(endIndex).getResultEnd() == (chromoSomeRead.getFastaIndexEntryImpl().getEntries().get(chrName).getLength()) && oriSeq.length()>0){
 						mapSingleRecord = new MapSingleRecord(twoSeqOfMsaResults.get(endIndex).getRefEnd()+1, 0-oriSeqLength, oriSeq, "-");
 						sdiRecords.get(chrName).insertLast(mapSingleRecord);
 					//	System.out.println(453 + " " + 3);
@@ -680,7 +719,7 @@ public class ReSDIFromMsaActionLinkVersion {
 									}
 									StringBuffer midSeqBuffer = new StringBuffer();
 									for( int ind=0; ind<gap_size; ++ind ){
-										midSeqBuffer.append( refChromoSomeRead.getChromoSomeById(chrName).getSequence().charAt( lastOneEnd-1+ind) );
+										midSeqBuffer.append( refChromoSomeRead.getChromoSomeById(chrName).charAt( lastOneEnd-1+ind) );
 									}
 									referenceSeqBuffer.append(midSeqBuffer);
 									if( currOne.getMapSingleRecord().getOriginal().compareToIgnoreCase("-") != 0 ){
@@ -838,27 +877,34 @@ public class ReSDIFromMsaActionLinkVersion {
 				if(sdiRecords.get(chr).getFirst() != null){
 					String lastLine="";
 					try {
-						PrintWriter out = new PrintWriter(new FileOutputStream(outputDir+File.separator+name+"_"+chr+".myv2.sdi"), true);
+						BufferedWriter out = new BufferedWriter(new FileWriter(outputDir+File.separator+name+".sdi", true));
+//						PrintWriter out = new PrintWriter(new FileOutputStream(outputDir+File.separator+name+".sdi"), true);
+						if( chrIndex > 1 ){
+							out.write("\n");
+						}
 						Data thisone = sdiRecords.get(chr).getFirst();
 						while( thisone != null ){
 							if(lineNumber >= 1){
-								out.println(lastLine);
+								out.write(lastLine+"\n");
 							}
 							lastLine=chr+"\t"+thisone.getMapSingleRecord().getBasement()+"\t"+thisone.getMapSingleRecord().getChanged()+"\t"+thisone.getMapSingleRecord().getOriginal()+"\t"+thisone.getMapSingleRecord().getResult();
 							lineNumber++;
 							thisone=thisone.getNext();
 						}
-						out.print(lastLine);
+						out.write(lastLine);
 						out.close();
 					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+					} catch ( IOException e ){
 						e.printStackTrace();
 					}
 				}
 			}
-			threadCount.countDown();
+			//threadCount.countDown();
 		}
 	}
 }
+
 
 class FirstLastList {
 	public class Data{
@@ -868,22 +914,22 @@ class FirstLastList {
 		Data(MapSingleRecord mapSingleRecord){
 			this.mapSingleRecord = mapSingleRecord;
 		}
-		public MapSingleRecord getMapSingleRecord(){
+		public synchronized MapSingleRecord getMapSingleRecord(){
 			return mapSingleRecord;
 		}
-		public Data getNext(){
+		public synchronized Data getNext(){
 			return next;
 		}
-		public Data getLast(){
+		public synchronized Data getLast(){
 			return last;
 		}
-		public void setNext( Data data ){
+		public synchronized void setNext( Data data ){
 			this.next = data;
 		}
-		public void setLast( Data  data){
+		public synchronized void setLast( Data  data){
 			this.last=data;
 		}
-		public void setMapSingleRecord( MapSingleRecord  mapSingleRecord){
+		public synchronized void setMapSingleRecord( MapSingleRecord  mapSingleRecord){
 			this.mapSingleRecord=mapSingleRecord;
 		}
 	}
@@ -891,7 +937,7 @@ class FirstLastList {
     private Data first = null;  
     private Data last = null;  
       
-    public void insertFirst(MapSingleRecord mapSingleRecord){  
+    public synchronized void insertFirst(MapSingleRecord mapSingleRecord){
         Data data = new Data(mapSingleRecord);  
         if(first == null)  
             last = data;  
@@ -900,7 +946,7 @@ class FirstLastList {
         first = data;  
     }  
       
-    public void insertLast(MapSingleRecord mapSingleRecord){  
+    public synchronized void insertLast(MapSingleRecord mapSingleRecord){
         Data data = new Data(mapSingleRecord);  
         if(first == null){  
             first = data;  
@@ -911,7 +957,7 @@ class FirstLastList {
         last = data;  
     }  
       
-    public MapSingleRecord deleteFirst() throws Exception{  
+    public synchronized MapSingleRecord deleteFirst() throws Exception{
           if(first == null)  
              throw new Exception("empty");  
           Data temp = first;  
@@ -922,7 +968,7 @@ class FirstLastList {
           return temp.mapSingleRecord;
    }     
       
-    public void deleteLast() throws Exception{  
+    public synchronized void deleteLast() throws Exception{
         if(first == null)  
             throw new Exception("empty");  
         if(first.next == null){
@@ -933,10 +979,10 @@ class FirstLastList {
         	last.next=null;
         }
     }
-    public Data getFirst(){
+    public synchronized Data getFirst(){
     	return first;
     }
-    public Data getLast(){
+    public synchronized Data getLast(){
     	return last;
     }
 }

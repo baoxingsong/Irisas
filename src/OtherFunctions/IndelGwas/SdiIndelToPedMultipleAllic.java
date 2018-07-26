@@ -19,13 +19,13 @@ public class SdiIndelToPedMultipleAllic {
 	public SdiIndelToPedMultipleAllic(){
 
 	}
-	public void setThreadNumber(int threadNumber) {
+	public synchronized void setThreadNumber(int threadNumber) {
 		this.threadNumber = threadNumber;
 	}
-	public void setAccessionListFile(String accessionListFile) {
+	public synchronized void setAccessionListFile(String accessionListFile) {
 		this.accessionListFile = accessionListFile;
 	}
-	public void setSdiLocation(String sdiLocation) {
+	public synchronized void setSdiLocation(String sdiLocation) {
 		this.sdiLocation = sdiLocation;
 	}
 
@@ -229,7 +229,7 @@ public class SdiIndelToPedMultipleAllic {
 		public synchronized void println( ){
 			outPut.println(); //
 		}
-		public void close(){
+		public synchronized void close(){
 			outPut.close();
 		}
 	}
@@ -317,28 +317,28 @@ public class SdiIndelToPedMultipleAllic {
 		private String id;
 		private HashSet<Indel> indels = new HashSet<Indel>();
 		private HashMap<String, HashSet<Indel>> indelsMap = new HashMap<String, HashSet<Indel>>();
-		public String getId() {
+		public synchronized String getId() {
 			return id;
 		}
-		public void setId(String id) {
+		public synchronized void setId(String id) {
 			this.id = id;
 		}
-		public HashMap<String, HashSet<Indel>> getIndelsMap() {
+		public synchronized HashMap<String, HashSet<Indel>> getIndelsMap() {
 			return indelsMap;
 		}
-		public void setIndelsMap(HashMap<String, HashSet<Indel>> indelsMap) {
+		public synchronized void setIndelsMap(HashMap<String, HashSet<Indel>> indelsMap) {
 			this.indelsMap = indelsMap;
 		}
-		public HashSet<Indel> getIndels() {
+		public synchronized HashSet<Indel> getIndels() {
 			return indels;
 		}
-		public void setIndels(HashSet<Indel> indels) {
+		public synchronized void setIndels(HashSet<Indel> indels) {
 			this.indels = indels;
 		}
 		public Accession(String id) {
 			this.id = id;
 		}
-		public void add( Indel indel){
+		public synchronized void add( Indel indel){
 			indels.add(indel);
 			if( indelsMap.keySet().contains(indel.getChrName()) ){
 				
@@ -354,14 +354,14 @@ public class SdiIndelToPedMultipleAllic {
 		private int length;
 		private String chrName;
 		private HashSet<Indel> overlapedIndles = new HashSet<Indel>();
-		public HashSet<Indel> getOverlapedIndles() {
+		public synchronized  HashSet<Indel> getOverlapedIndles() {
 			return overlapedIndles;
 		}
-		public void setOverlapedIndles(HashSet<Indel> overlapedIndles) {
+		public synchronized  void setOverlapedIndles(HashSet<Indel> overlapedIndles) {
 			this.overlapedIndles = overlapedIndles;
 		}
 		@Override
-		public int hashCode() {
+		public synchronized int hashCode() {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + getOuterType().hashCode();
@@ -371,7 +371,7 @@ public class SdiIndelToPedMultipleAllic {
 			result = prime * result + start;
 			return result;
 		}
-		public boolean be_covered(Indel indel){
+		public synchronized boolean be_covered(Indel indel){
 			if( indel.getLength()<0 && this.getLength()<0 ){
 				if( (indel.getStart() <= this.getStart()) && ( (indel.getStart()+Math.abs(indel.getLength()))>= (this.getStart()+Math.abs(this.getLength())) ) ){
 					return true;
@@ -388,7 +388,7 @@ public class SdiIndelToPedMultipleAllic {
 				return false;
 			}
 		}
-		public boolean overlap(Indel indel) {
+		public synchronized boolean overlap(Indel indel) {
 			if( this.chrName.equals(indel.getChrName()) ){
 				int start1 = indel.getStart();
 				int end1;
@@ -419,7 +419,7 @@ public class SdiIndelToPedMultipleAllic {
 			return false;
 		}
 		@Override
-		public boolean equals(Object obj) {
+		public synchronized boolean equals(Object obj) {
 			if (this == obj)
 				return true;
 			if (obj == null)
@@ -440,25 +440,25 @@ public class SdiIndelToPedMultipleAllic {
 				return false;
 			return true;
 		}
-		private SdiIndelToPedMultipleAllic getOuterType() {
+		private synchronized SdiIndelToPedMultipleAllic getOuterType() {
 			return SdiIndelToPedMultipleAllic.this;
 		}
-		public int getStart() {
+		public synchronized int getStart() {
 			return start;
 		}
-		public void setStart(int start) {
+		public synchronized void setStart(int start) {
 			this.start = start;
 		}
-		public int getLength() {
+		public synchronized int getLength() {
 			return length;
 		}
-		public void setLength(int length) {
+		public synchronized void setLength(int length) {
 			this.length = length;
 		}
-		public String getChrName() {
+		public synchronized String getChrName() {
 			return chrName;
 		}
-		public void setChrName(String chrName) {
+		public synchronized void setChrName(String chrName) {
 			this.chrName = chrName;
 		}
 		public Indel(int start, int length, String chrName) {
@@ -468,7 +468,7 @@ public class SdiIndelToPedMultipleAllic {
 			this.chrName = chrName;
 		}
 		@Override
-		public int compareTo( Indel indel ) {			
+		public synchronized int compareTo( Indel indel ) {
 			String thisChrName = chrName;
 			String indelChrName = indel.getChrName();
 //			thisChrName=thisChrName.replaceAll("Chr", "");

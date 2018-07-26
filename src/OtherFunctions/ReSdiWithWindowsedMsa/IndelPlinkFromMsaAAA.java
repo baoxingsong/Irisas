@@ -16,19 +16,19 @@ public class IndelPlinkFromMsaAAA {
     private ArrayList<String> chrs = new  ArrayList<String>();
     private String genomeFolder;
 
-    public void setMsaFolder(String msaFolder) {
+    public synchronized void setMsaFolder(String msaFolder) {
         this.msaFolder = msaFolder;
     }
-    public void setAccessionListFile(String accessionListFile) {
+    public synchronized void setAccessionListFile(String accessionListFile) {
         this.accessionListFile = accessionListFile;
     }
-    public void setRefName(String refName) {
+    public synchronized void setRefName(String refName) {
         this.refName = refName;
     }
-    public void setChrs(ArrayList<String> chrs) {
+    public synchronized void setChrs(ArrayList<String> chrs) {
         this.chrs = chrs;
     }
-    public void setGenomeFolder(String genomeFolder) {
+    public synchronized void setGenomeFolder(String genomeFolder) {
         this.genomeFolder = genomeFolder;
     }
     public IndelPlinkFromMsaAAA(){

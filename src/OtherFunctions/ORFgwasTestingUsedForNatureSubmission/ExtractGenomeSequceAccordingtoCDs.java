@@ -21,26 +21,26 @@ public class ExtractGenomeSequceAccordingtoCDs {
 	private String outPutFolder;
 	private int interval = 1000;
 
-	public void setTargetgenomeSequence(String targetgenomeSequence) {
+	public synchronized void setTargetgenomeSequence(String targetgenomeSequence) {
 		this.targetgenomeSequence = targetgenomeSequence;
 	}
-	public void setSdiFile(String sdiFile) {
+	public synchronized void setSdiFile(String sdiFile) {
 		this.sdiFile = sdiFile;
 	}
-	public void setGffFile(String gffFile) {
+	public synchronized void setGffFile(String gffFile) {
 		this.gffFile = gffFile;
 	}
-	public void setOutPutFolder(String outPutFolder) {
+	public synchronized void setOutPutFolder(String outPutFolder) {
 		this.outPutFolder = outPutFolder;
 	}
-	public void setInterval(int interval) {
+	public synchronized void setInterval(int interval) {
 		this.interval = interval;
 	}
 	public ExtractGenomeSequceAccordingtoCDs(){
 
 	}
 	private ArrayList<String> outPutFiles = new ArrayList<String>();
-	public ArrayList<String> getOutPutFiles(){
+	public synchronized ArrayList<String> getOutPutFiles(){
 		return outPutFiles;
 	}
 	public ExtractGenomeSequceAccordingtoCDs( String [] argv ){

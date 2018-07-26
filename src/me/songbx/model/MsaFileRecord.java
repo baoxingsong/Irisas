@@ -33,7 +33,7 @@ public class MsaFileRecord implements Comparable<MsaFileRecord>{
 		this.records = records;
 	}
 	@Override
-	public int compareTo(MsaFileRecord o) {
+	public synchronized int compareTo(MsaFileRecord o) {
 		return this.getStart() - o.getStart();
 	}
 }

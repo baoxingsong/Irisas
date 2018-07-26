@@ -77,7 +77,7 @@ public class MapSingleRecord implements Comparable<MapSingleRecord> {
 		this.result=result;
 	}
 	@Override
-	public synchronized  int compareTo(MapSingleRecord o) {
+	public synchronized int compareTo(MapSingleRecord o) {
 		if(this.getBasement() != o.getBasement()){
 			return this.getBasement()-o.getBasement();
 		}
@@ -105,7 +105,7 @@ public class MapSingleRecord implements Comparable<MapSingleRecord> {
 	public synchronized int getChanged() {
 		return changed;
 	}
-	public boolean ifPureSnp(){
+	public synchronized boolean ifPureSnp(){
 		if( this.changed==0 && this.original.length()==1 && this.original.compareToIgnoreCase("-")!=0 ){
 			return true;
 		}else{

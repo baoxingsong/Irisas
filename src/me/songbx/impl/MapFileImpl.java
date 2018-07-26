@@ -418,11 +418,11 @@ public class MapFileImpl {
 		System.out.println( changed );
 	}
 
-	public HashMap<String, ArrayList<MapSingleRecord>> getSnpRecords() {
+	public synchronized HashMap<String, ArrayList<MapSingleRecord>> getSnpRecords() {
 		return snpRecords;
 	}
 
-	public void setSnpRecords(HashMap<String, ArrayList<MapSingleRecord>> snpRecords) {
+	public synchronized void setSnpRecords(HashMap<String, ArrayList<MapSingleRecord>> snpRecords) {
 		this.snpRecords = snpRecords;
 	}
 

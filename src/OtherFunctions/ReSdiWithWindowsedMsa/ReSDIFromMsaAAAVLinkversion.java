@@ -1,20 +1,17 @@
 package OtherFunctions.ReSdiWithWindowsedMsa;
 
 import me.songbx.service.ChromoSomeReadService;
+import me.songbx.service.ChromoSomeReadServiceWithIndex;
 import org.apache.commons.cli.*;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ReSDIFromMsaAAAVLinkversion {
 	private int threadNumber = 5;
-    private int numberOfAccessions = 50;
+    private int numberOfAccessions = 40;
 
     private String msaFolder;
     private String accessionListFile;
@@ -26,28 +23,28 @@ public class ReSDIFromMsaAAAVLinkversion {
     private int sizeOfGapForSNPMerge=1;
     private int sizeOfGapForINDELMerge=1;
 
-    public void setThreadNumber(int threadNumber) {
+    public synchronized void setThreadNumber(int threadNumber) {
         this.threadNumber = threadNumber;
     }
-    public void setNumberOfAccessions(int numberOfAccessions) {
+    public synchronized void setNumberOfAccessions(int numberOfAccessions) {
         this.numberOfAccessions = numberOfAccessions;
     }
-    public void setMsaFolder(String msaFolder) {
+    public synchronized void setMsaFolder(String msaFolder) {
         this.msaFolder = msaFolder;
     }
-    public void setAccessionListFile(String accessionListFile) {
+    public synchronized void setAccessionListFile(String accessionListFile) {
         this.accessionListFile = accessionListFile;
     }
-    public void setRefName(String refName) {
+    public synchronized void setRefName(String refName) {
         this.refName = refName;
     }
-    public void setChrs(ArrayList<String> chrs) {
+    public synchronized void setChrs(ArrayList<String> chrs) {
         this.chrs = chrs;
     }
-    public void setOutPutPath(String outPutPath) {
+    public synchronized void setOutPutPath(String outPutPath) {
         this.outPutPath = outPutPath;
     }
-    public void setGenomeFolder(String genomeFolder) {
+    public synchronized void setGenomeFolder(String genomeFolder) {
         this.genomeFolder = genomeFolder;
     }
     public ReSDIFromMsaAAAVLinkversion(){
@@ -182,8 +179,7 @@ public class ReSDIFromMsaAAAVLinkversion {
 
         doit();
 	}
-	
-	
+
 	public void doit(){
 		ArrayList<String> names = new  ArrayList<String>();
 		File file = new File(accessionListFile);
@@ -209,6 +205,15 @@ public class ReSDIFromMsaAAAVLinkversion {
             }
         }
 
+        for(String name : names){
+            try {
+                PrintWriter out = new PrintWriter(outPutPath+File.separator+name+".sdi"); //empty this file
+                out.close();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+//						System.out.println(names.get(a));
+        }
         
         // prepare folder for output
         File outPutPathFolder = new File(outPutPath);
@@ -217,22 +222,25 @@ public class ReSDIFromMsaAAAVLinkversion {
 		}else{
 			outPutPathFolder.mkdirs();
 		}
-        ChromoSomeReadService refChromoSomeRead = new ChromoSomeReadService(genomeFolder + File.separator + refName + ".fa");
+		String referenceGenomePath = genomeFolder + File.separator + refName + ".fa";
+        ChromoSomeReadServiceWithIndex refChromoSomeReadWithIndex = new ChromoSomeReadServiceWithIndex(referenceGenomePath);
+        ChromoSomeReadService refChromoSomeRead = new ChromoSomeReadService(referenceGenomePath);
 
+        int chrIndex = 0;
         for(String ss1 : chrs){
+            ++chrIndex;
         	if( (new File(msaFolder + File.separator + ss1)).isDirectory() ){
-        		HashMap<String, ArrayList<String>> msaFileLocationsHashmap = new HashMap<String, ArrayList<String>>();
-				msaFileLocationsHashmap.put(ss1, new ArrayList<String>());
+        		ArrayList<String> msaFileLocations = new ArrayList<String>();
 				File f = new File(msaFolder + File.separator + ss1 + File.separator);
 				String s[]=f.list();
 				Pattern p = Pattern.compile("\\.mafft$");
 				for(String ss : s){
 					Matcher m=p.matcher(ss);
 					if(m.find()){
-						msaFileLocationsHashmap.get(ss1).add(msaFolder + File.separator + ss1 + File.separator + ss);
+						msaFileLocations.add(msaFolder + File.separator + ss1 + File.separator + ss);
 					}
 				}
-				File outputFolder = new File(outPutPath + File.separator + ss1+"/");
+				File outputFolder = new File(outPutPath + File.separator);
 				if( outputFolder.exists() ){
 					
 				}else{
@@ -248,11 +256,10 @@ public class ReSDIFromMsaAAAVLinkversion {
 					ArrayList<String> newNames = new ArrayList<String>();
 					for(int a=start; a<end; a++){
 						newNames.add(names.get(a));
-//						System.out.println(names.get(a));
 					}
-					new ReSDIFromMsaActionLinkVersion(newNames, msaFileLocationsHashmap, threadNumber,
-                            outPutPath + File.separator+ss1+File.separator, refName, genomeFolder,
-                            refChromoSomeRead, merge, sizeOfGapForSNPMerge, sizeOfGapForINDELMerge);
+					new ReSDIFromMsaActionLinkVersion(newNames, msaFileLocations, threadNumber,
+                            outPutPath + File.separator, refName, genomeFolder,
+                            refChromoSomeRead, referenceGenomePath, merge, sizeOfGapForSNPMerge, sizeOfGapForINDELMerge, chrIndex, ss1);
 				}
 			}
 		}

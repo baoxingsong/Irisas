@@ -25,23 +25,23 @@ public class ExonerateProteinAndEstAndSdiToLofPed {
 	public ExonerateProteinAndEstAndSdiToLofPed(){
 
 	}
-	public void setGffFile(String gffFile) {
+	public synchronized void setGffFile(String gffFile) {
 		this.gffFile = gffFile;
 	}
-	public void setFolderOfThisAccession(String folderOfThisAccession) {
+	public synchronized void setFolderOfThisAccession(String folderOfThisAccession) {
 		this.folderOfThisAccession = folderOfThisAccession;
 	}
-	public void setSdiFile(String sdiFile) {
+	public synchronized void setSdiFile(String sdiFile) {
 		this.sdiFile = sdiFile;
 	}
-	public void setTargetgenomeSequence(String targetgenomeSequence) {
+	public synchronized void setTargetgenomeSequence(String targetgenomeSequence) {
 		this.targetgenomeSequence = targetgenomeSequence;
 	}
-	public void setReferenceGenome(String referenceGenome) {
+	public synchronized void setReferenceGenome(String referenceGenome) {
 		this.referenceGenome = referenceGenome;
 	}
 
-	public  ExonerateProteinAndEstAndSdiToLofPed(String[] argv ){
+	public ExonerateProteinAndEstAndSdiToLofPed(String[] argv ){
 		
 		StringBuffer helpMessage=new StringBuffer("Integrating effect pipeline\nE-mail:song@mpipz.mpg.de\nArguments:\n");
 		helpMessage.append("  -a   reference gene structure annotation in GFF/GTF format\n");
@@ -413,16 +413,16 @@ public class ExonerateProteinAndEstAndSdiToLofPed {
 	class Position{
 		String chr;
 		int position;
-		public String getChr() {
+		public synchronized String getChr() {
 			return chr;
 		}
-		public void setChr(String chr) {
+		public synchronized void setChr(String chr) {
 			this.chr = chr;
 		}
-		public int getPosition() {
+		public synchronized int getPosition() {
 			return position;
 		}
-		public void setPosition(int position) {
+		public synchronized void setPosition(int position) {
 			this.position = position;
 		}
 		public Position(String chr, int position) {
@@ -431,7 +431,7 @@ public class ExonerateProteinAndEstAndSdiToLofPed {
 			this.position = position;
 		}
 		@Override
-		public int hashCode() {
+		public synchronized int hashCode() {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + getOuterType().hashCode();
@@ -440,7 +440,7 @@ public class ExonerateProteinAndEstAndSdiToLofPed {
 			return result;
 		}
 		@Override
-		public boolean equals(Object obj) {
+		public synchronized boolean equals(Object obj) {
 			if (this == obj)
 				return true;
 			if (obj == null)
