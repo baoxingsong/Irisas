@@ -35,7 +35,7 @@ public class MsaSingleRecord implements Comparable<MsaSingleRecord>{
 		this.sequence = sequence;
 	}
 	@Override
-	public int compareTo(MsaSingleRecord arg0) {
+	public synchronized int compareTo(MsaSingleRecord arg0) {
 		return this.getStart()-arg0.getStart();
 	}
 

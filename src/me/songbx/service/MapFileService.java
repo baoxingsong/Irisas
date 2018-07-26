@@ -61,7 +61,6 @@ public class MapFileService {
 	public synchronized void setAllRecords(HashMap<String, ArrayList<MapSingleRecord>> allRecords) {
 		mapFileImpl.setAllRecords(allRecords);
 	}
-
 	public synchronized void releaseRam() {
 		mapFileImpl.releaseRam();
 	}

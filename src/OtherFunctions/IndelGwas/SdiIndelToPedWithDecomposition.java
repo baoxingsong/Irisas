@@ -20,13 +20,13 @@ public class SdiIndelToPedWithDecomposition {
 	public SdiIndelToPedWithDecomposition(){
 
 	}
-	public void setThreadNumber(int threadNumber) {
+	public synchronized void setThreadNumber(int threadNumber) {
 		this.threadNumber = threadNumber;
 	}
-	public void setAccessionListFile(String accessionListFile) {
+	public synchronized void setAccessionListFile(String accessionListFile) {
 		this.accessionListFile = accessionListFile;
 	}
-	public void setSdiLocation(String sdiLocation) {
+	public synchronized void setSdiLocation(String sdiLocation) {
 		this.sdiLocation = sdiLocation;
 	}
 
@@ -391,7 +391,7 @@ public class SdiIndelToPedWithDecomposition {
 		public Accession(String id) {
 			this.id = id;
 		}
-		public void addInsertation( Indel indel){
+		public synchronized void addInsertation( Indel indel){
 			if( insertationsMap.keySet().contains(indel.getChrName()) ){
 				
 			}else{
@@ -399,7 +399,7 @@ public class SdiIndelToPedWithDecomposition {
 			}
 			insertationsMap.get(indel.getChrName()).add(indel);
 		}
-		public void addDeletion( Indel indel){
+		public synchronized void addDeletion( Indel indel){
 			if( deletionsMap.keySet().contains(indel.getChrName()) ){
 
 			}else{
@@ -407,22 +407,22 @@ public class SdiIndelToPedWithDecomposition {
 			}
 			deletionsMap.get(indel.getChrName()).add(indel);
 		}
-		public String getId() {
+		public synchronized String getId() {
 			return id;
 		}
-		public void setId(String id) {
+		public synchronized void setId(String id) {
 			this.id = id;
 		}
-		public HashMap<String, HashSet<Indel>> getInsertationsMap() {
+		public synchronized HashMap<String, HashSet<Indel>> getInsertationsMap() {
 			return insertationsMap;
 		}
-		public void setInsertationsMap(HashMap<String, HashSet<Indel>> insertationsMap) {
+		public synchronized void setInsertationsMap(HashMap<String, HashSet<Indel>> insertationsMap) {
 			this.insertationsMap = insertationsMap;
 		}
-		public HashMap<String, HashSet<Indel>> getDeletionsMap() {
+		public synchronized HashMap<String, HashSet<Indel>> getDeletionsMap() {
 			return deletionsMap;
 		}
-		public void setDeletionsMap(HashMap<String, HashSet<Indel>> deletionsMap) {
+		public synchronized void setDeletionsMap(HashMap<String, HashSet<Indel>> deletionsMap) {
 			this.deletionsMap = deletionsMap;
 		}
 	}
@@ -432,7 +432,7 @@ public class SdiIndelToPedWithDecomposition {
 		private int length;
 		private String chrName;
 		@Override
-		public int hashCode() {
+		public synchronized int hashCode() {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + getOuterType().hashCode();
@@ -442,7 +442,7 @@ public class SdiIndelToPedWithDecomposition {
 			result = prime * result + start;
 			return result;
 		}
-		public boolean be_covered(Indel indel){
+		public synchronized boolean be_covered(Indel indel){
 			if( indel.getLength()<0 && this.getLength()<0 ){
 				if( (indel.getStart() <= this.getStart()) && ( (indel.getStart()+Math.abs(indel.getLength()))>= (this.getStart()+Math.abs(this.getLength())) ) ){
 					return true;
@@ -459,7 +459,7 @@ public class SdiIndelToPedWithDecomposition {
 				return false;
 			}
 		}
-		public boolean overlap(Indel indel) {
+		public synchronized boolean overlap(Indel indel) {
 			if( this.chrName.equals(indel.getChrName()) ){
 				int start1 = indel.getStart();
 				int start2 = this.getStart();
@@ -482,7 +482,7 @@ public class SdiIndelToPedWithDecomposition {
 			return false;
 		}
 		@Override
-		public boolean equals(Object obj) {
+		public synchronized boolean equals(Object obj) {
 			if (this == obj)
 				return true;
 			if (obj == null)
@@ -503,25 +503,25 @@ public class SdiIndelToPedWithDecomposition {
 				return false;
 			return true;
 		}
-		private SdiIndelToPedWithDecomposition getOuterType() {
+		private synchronized SdiIndelToPedWithDecomposition getOuterType() {
 			return SdiIndelToPedWithDecomposition.this;
 		}
-		public int getStart() {
+		public synchronized int getStart() {
 			return start;
 		}
-		public void setStart(int start) {
+		public synchronized void setStart(int start) {
 			this.start = start;
 		}
-		public int getLength() {
+		public synchronized int getLength() {
 			return length;
 		}
-		public void setLength(int length) {
+		public synchronized void setLength(int length) {
 			this.length = length;
 		}
-		public String getChrName() {
+		public synchronized String getChrName() {
 			return chrName;
 		}
-		public void setChrName(String chrName) {
+		public synchronized void setChrName(String chrName) {
 			this.chrName = chrName;
 		}
 		public Indel(int start, int length, String chrName) {
@@ -531,7 +531,7 @@ public class SdiIndelToPedWithDecomposition {
 			this.chrName = chrName;
 		}
 		@Override
-		public int compareTo( Indel indel ) {			
+		public synchronized int compareTo( Indel indel ) {
 			String thisChrName = chrName;
 			String indelChrName = indel.getChrName();
 //			thisChrName=thisChrName.replaceAll("Chr", "");
@@ -550,10 +550,10 @@ public class SdiIndelToPedWithDecomposition {
 			}
 		}
 		private HashSet<Indel> overlapedIndles = new HashSet<Indel>();
-		public HashSet<Indel> getOverlapedIndles() {
+		public synchronized HashSet<Indel> getOverlapedIndles() {
 			return overlapedIndles;
 		}
-		public void setOverlapedIndles(HashSet<Indel> overlapedIndles) {
+		public synchronized void setOverlapedIndles(HashSet<Indel> overlapedIndles) {
 			this.overlapedIndles = overlapedIndles;
 		}
 	}

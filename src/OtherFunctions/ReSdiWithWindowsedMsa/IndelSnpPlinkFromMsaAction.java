@@ -4,15 +4,17 @@ import edu.unc.genomics.Contig;
 import edu.unc.genomics.io.WigFileException;
 import edu.unc.genomics.io.WigFileFormatException;
 import edu.unc.genomics.io.WigFileReader;
+import me.songbx.impl.FastaIndexEntryImpl;
 import me.songbx.impl.MsaFileReadImpl;
 import me.songbx.model.*;
-import me.songbx.service.ChromoSomeReadService;
-import me.songbx.util.MyThreadCount;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,8 +31,9 @@ public class IndelSnpPlinkFromMsaAction {
 	private String genomeFolder;
 	private boolean merge; // the merge is not implemented yet
 	private int sizeOfGapForMerge;
+	private PrintWriter outTped;
 	public IndelSnpPlinkFromMsaAction(ArrayList<String> names, HashMap<String, ArrayList<MsaFile>> msaFileLocationsHashmap,
-                                      String refName, String genomeFolder, int threadNumber, boolean merge, int sizeOfGapForMerge){
+                                      String refName, String genomeFolder, int threadNumber, boolean merge, int sizeOfGapForMerge, PrintWriter outTped){
 		this.names=names;
 		this.msaFileLocationsHashmap=msaFileLocationsHashmap;
 		this.genomeFolder=genomeFolder;
@@ -38,6 +41,7 @@ public class IndelSnpPlinkFromMsaAction {
 		this.threadNumber=threadNumber;
 		this.merge=merge;
 		this.sizeOfGapForMerge=sizeOfGapForMerge;
+		this.outTped=outTped;
 		this.doIt();
 	}
 
@@ -61,15 +65,18 @@ public class IndelSnpPlinkFromMsaAction {
 				if(f.exists() && !f.isDirectory()) {
 
 				}else{
-					try {
+					/*try {
+						Runtime r = Runtime.getRuntime();
 						String[] command = {"samtools", "faidx", "fastaPath"};
-						Process p = new ProcessBuilder(command).start();
+						Process p = r.exec(command);
                         p.waitFor();
+						p.destroy();
 					}catch (final Exception e) {
 						System.err.print("genome sequence index file could not be created");
 						e.printStackTrace();
 						System.exit(1);
-					}
+					}*/
+					new FastaIndexEntryImpl().createFastaIndexFile(fastaPath);
 				}
 			}
 			// prepare the chromosome length information by creating fasta index file end
@@ -99,7 +106,7 @@ public class IndelSnpPlinkFromMsaAction {
 			outputCode.put('N', 6);
             // encode nucleic acids into integer end
 
-            PrintWriter outTped = new PrintWriter(new FileOutputStream("indel_snp_from_msa.tped",  true), true);
+
 			HashSet<String> names_set = new HashSet<String>();
 			names_set.addAll(names);
 			for(String chrName : msaFileLocationsHashmap.keySet()){
@@ -136,8 +143,7 @@ public class IndelSnpPlinkFromMsaAction {
                 for( MsaFile msaFile : msaFileLocations){
                     msaFile_index++;
 
-					String msaFileLocation = msaFile.getFilePath();
-					MsaFileRecord msaFileRecord = new MsaFileReadImpl(msaFileLocation, names_set).getMsaFileRecord();
+					MsaFileRecord msaFileRecord = new MsaFileReadImpl(msaFile.getFilePath(), names_set).getMsaFileRecord();
 
 					int transcriptStart = msaFileRecord.getStart();
 					int transcriptEnd = msaFileRecord.getEnd();
@@ -250,7 +256,8 @@ public class IndelSnpPlinkFromMsaAction {
 					outTped.println();
 					// output boundary indels end
 
-					MyThreadCount threadCount = new MyThreadCount(0);
+					//MyThreadCount threadCount = new MyThreadCount(0);
+					ExecutorService myExecutor = Executors.newFixedThreadPool(threadNumber);
 
                     // output matrix start
 					TpedOutPutContents tpedOutPutContent_arrayList = new TpedOutPutContents();
@@ -310,7 +317,7 @@ public class IndelSnpPlinkFromMsaAction {
                                     lastLength=0;
                                     lastCol_seq="";
                                 }
-
+/*
 								boolean isThisThreadUnrun=true;
 								while(isThisThreadUnrun){
 									if(threadCount.getCount() < threadNumber){
@@ -327,6 +334,10 @@ public class IndelSnpPlinkFromMsaAction {
 										}
 									}
 								}
+								*/
+
+								myExecutor.execute(new SnpColumn( tpedOutPutContent_arrayList, transcriptStart, ref_seq_index,
+										chrNameSimple, index_array, chrName, sequences, accessionName_WigFileReader_map));
 //                                // output this genotype begin
 //								StringBuffer contentsb = new StringBuffer();
 //								int outPosition = transcriptStart+ref_seq_index-1;
@@ -374,12 +385,18 @@ public class IndelSnpPlinkFromMsaAction {
                             lastLength = 0;
                         }
 					}
-					while(threadCount.hasNext()){// wait for all the thread
+					/*while(threadCount.hasNext()){// wait for all the thread
 						try {
 							Thread.sleep(1);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
+					}*/
+					myExecutor.shutdown();
+					try {
+						myExecutor.awaitTermination(20, TimeUnit.MINUTES);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
 					tpedOutPutContent_arrayList.sort();
 					for( TpedOutPutContent tpedOutPutContent : tpedOutPutContent_arrayList.getTpedOutPutContents()  ){
@@ -407,7 +424,6 @@ public class IndelSnpPlinkFromMsaAction {
                 outTped.println();
                 // the part after last window end
 			}
-			outTped.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -422,19 +438,19 @@ public class IndelSnpPlinkFromMsaAction {
 			this.position = position;
 			this.content = content;
 		}
-		public int getPosition() {
+		public synchronized int getPosition() {
 			return position;
 		}
-		public void setPosition(int postion) {
+		public synchronized void setPosition(int postion) {
 			this.position = postion;
 		}
-		public String getContent() {
+		public synchronized String getContent() {
 			return content;
 		}
-		public void setContent(String content) {
+		public synchronized void setContent(String content) {
 			this.content = content;
 		}
-		public int compareTo ( TpedOutPutContent tpedOutPutContent){
+		public synchronized int compareTo ( TpedOutPutContent tpedOutPutContent){
 			return this.position - tpedOutPutContent.getPosition();
 		}
 	}
@@ -464,10 +480,10 @@ public class IndelSnpPlinkFromMsaAction {
 		private String chrName;
 		private char[][] sequences;
 		private HashMap<String, WigFileReader> accessionName_WigFileReader_map;
-		private MyThreadCount threadCount;
+		//private MyThreadCount threadCount;
 		public SnpColumn( TpedOutPutContents tpedOutPutContent_arrayList, int transcriptStart, int ref_seq_index,
 						  String chrNameSimple, int index_array, String chrName, char[][] sequences,
-						  HashMap<String, WigFileReader> accessionName_WigFileReader_map, MyThreadCount threadCount ){
+						  HashMap<String, WigFileReader> accessionName_WigFileReader_map/*, MyThreadCount threadCount */){
 			this.tpedOutPutContent_arrayList = tpedOutPutContent_arrayList;
 			this.transcriptStart = transcriptStart;
 			this.ref_seq_index = ref_seq_index;
@@ -476,7 +492,7 @@ public class IndelSnpPlinkFromMsaAction {
 			this.chrName = chrName;
 			this.sequences = sequences;
 			this.accessionName_WigFileReader_map = accessionName_WigFileReader_map;
-			this.threadCount = threadCount;
+			//this.threadCount = threadCount;
 		}
 		public void run( ){
 			StringBuffer contentsb = new StringBuffer();
@@ -509,7 +525,7 @@ public class IndelSnpPlinkFromMsaAction {
 			}
 			TpedOutPutContent tpedOutPutContent = new TpedOutPutContent(index_array, contentsb.toString());
 			tpedOutPutContent_arrayList.add(tpedOutPutContent);
-			threadCount.countDown();
+			//threadCount.countDown();
 		}
 	}
 }

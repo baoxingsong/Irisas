@@ -32,8 +32,7 @@ public class TranscriptLiftStartEndSequenceAasequenceIndel extends Transcript im
 	}
 
 
-
-	public void setNeutralSelectionSequence(String neutralSelectionSequence) {
+	public synchronized void setNeutralSelectionSequence(String neutralSelectionSequence) {
 		this.neutralSelectionSequence = neutralSelectionSequence;
 	}
 
@@ -158,8 +157,6 @@ public class TranscriptLiftStartEndSequenceAasequenceIndel extends Transcript im
 	public synchronized boolean isOrfLost() {
 		return orfLost;
 	}
-
-
 
 	public synchronized void setOrfLost(boolean orfLost) {
 		this.orfLost = orfLost;

@@ -18,19 +18,19 @@ public class IndelSnpPlinkFromMsaAAA {
     private boolean merge=false;
     private int sizeOfGapForMerge=0;
 
-    public void setMsaFolder(String msaFolder) {
+    public synchronized void setMsaFolder(String msaFolder) {
         this.msaFolder = msaFolder;
     }
-    public void setAccessionListFile(String accessionListFile) {
+    public synchronized void setAccessionListFile(String accessionListFile) {
         this.accessionListFile = accessionListFile;
     }
-    public void setRefName(String refName) {
+    public synchronized void setRefName(String refName) {
         this.refName = refName;
     }
-    public void setChrs(ArrayList<String> chrs) {
+    public synchronized void setChrs(ArrayList<String> chrs) {
         this.chrs = chrs;
     }
-    public void setGenomeFolder(String genomeFolder) {
+    public synchronized void setGenomeFolder(String genomeFolder) {
         this.genomeFolder = genomeFolder;
     }
     public IndelSnpPlinkFromMsaAAA(){
@@ -42,7 +42,7 @@ public class IndelSnpPlinkFromMsaAAA {
         helpMessage.append("  -t   [integer] thread number (Default 5)\n");
         helpMessage.append("  -i   input folder where could find MSA result\n");
         helpMessage.append("  -l   list of accession names. (the reference accession should be in included)\n");
-        helpMessage.append("  -r   name of reference accession/line\n");
+        helpMessage.append("  -r   name of reference accession/line\n"); // by assign which is the reference, could help to get the position of each locus and trimming
         helpMessage.append("  -c   list of chromosome names\n");
         helpMessage.append("  -g   the folder where the genome sequences and sdi files are located\n");
         
@@ -141,7 +141,6 @@ public class IndelSnpPlinkFromMsaAAA {
         doit();
 	}
 	
-	
 	public void doit(){
         // prepare accession List begin
 		ArrayList<String> names = new  ArrayList<String>();
@@ -168,17 +167,18 @@ public class IndelSnpPlinkFromMsaAAA {
             }
         }
         // prepare accession List end
+        PrintWriter outTped = null;
         try {
             // tfam begin
-            PrintWriter outTfam = new PrintWriter(new FileOutputStream("indel_snp_from_msa.tfam"), true);
+            PrintWriter outTfam = new PrintWriter(new FileOutputStream("indel_snp_from_msa.tfam"), false);
             for(String name : names){
                 outTfam.println(name+"\t"+name+"\t0\t0\t1\t1");
             }
             outTfam.close();
             // tfam end
 
-            PrintWriter outTped = new PrintWriter(new FileOutputStream("indel_snp_from_msa.tped"), true); // empty it
-            outTped.close();
+            outTped = new PrintWriter(new FileOutputStream("indel_snp_from_msa.tped")); // empty it
+
         } catch (FileNotFoundException e){
             e.printStackTrace();
         }
@@ -199,9 +199,9 @@ public class IndelSnpPlinkFromMsaAAA {
 				}
                 // get msa file list end
 
-                new IndelSnpPlinkFromMsaAction(names, msaFileLocationsHashmap, refName, genomeFolder, threadNumber, merge, sizeOfGapForMerge);
+                new IndelSnpPlinkFromMsaAction(names, msaFileLocationsHashmap, refName, genomeFolder, threadNumber, merge, sizeOfGapForMerge, outTped);
 			}
 		}
+        outTped.close();
 	}
 }
-

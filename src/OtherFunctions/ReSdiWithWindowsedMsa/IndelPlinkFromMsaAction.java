@@ -1,5 +1,6 @@
 package OtherFunctions.ReSdiWithWindowsedMsa;
 
+import me.songbx.impl.FastaIndexEntryImpl;
 import me.songbx.impl.MsaFileReadImpl;
 import me.songbx.model.MsaFileRecord;
 import me.songbx.model.MsaSingleRecord;
@@ -43,14 +44,15 @@ public class IndelPlinkFromMsaAction {
 				if(f.exists() && !f.isDirectory()) {
 
 				}else{
-					try {
+					/*try {
 						Process p = new ProcessBuilder("samtools faidx " + fastaPath).start();
 						p.waitFor();
 					}catch (final Exception e) {
 						e.printStackTrace();
 						System.err.print("genome sequence index file could not be created");
 						System.exit(1);
-					}
+					}*/
+					new FastaIndexEntryImpl().createFastaIndexFile(fastaPath);
 				}
 			}
 			// prepare the chromosome length information by creating fasta index file end

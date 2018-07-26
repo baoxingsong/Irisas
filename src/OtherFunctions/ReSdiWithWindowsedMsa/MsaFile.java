@@ -14,7 +14,7 @@ public class MsaFile implements Comparable<MsaFile>{
     }
 
     @Override
-    public boolean equals(Object o) {
+    public synchronized boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MsaFile msaFile = (MsaFile) o;
@@ -22,35 +22,35 @@ public class MsaFile implements Comparable<MsaFile>{
     }
 
     @Override
-    public int hashCode() {
+    public synchronized int hashCode() {
         return Objects.hash(filePath);
     }
 
-    public int compareTo(MsaFile msaFile){
+    public synchronized int compareTo(MsaFile msaFile){
         return (this.start - msaFile.getStart());
     }
 
-    public int getStart() {
+    public synchronized int getStart() {
         return start;
     }
 
-    public void setStart(int start) {
+    public synchronized void setStart(int start) {
         this.start = start;
     }
 
-    public int getEnd() {
+    public synchronized int getEnd() {
         return end;
     }
 
-    public void setEnd(int end) {
+    public synchronized void setEnd(int end) {
         this.end = end;
     }
 
-    public String getFilePath() {
+    public synchronized String getFilePath() {
         return filePath;
     }
 
-    public void setFilePath(String filePath) {
+    public synchronized void setFilePath(String filePath) {
         this.filePath = filePath;
     }
 }

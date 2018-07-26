@@ -13,9 +13,7 @@ public class CdsLiftSequence extends Cds {
 	private Integer liftStart;
 	private Integer liftEnd;
 	private String sequence;
-	
-	
-	
+
 
 	public synchronized String getSequence() {
 		return sequence;

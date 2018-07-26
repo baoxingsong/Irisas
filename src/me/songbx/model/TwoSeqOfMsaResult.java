@@ -66,8 +66,7 @@ public class TwoSeqOfMsaResult implements Comparable<TwoSeqOfMsaResult>{
 		this.resultSeq = resultSeq;
 	}
 	@Override
-	public int compareTo(TwoSeqOfMsaResult o) {
+	public synchronized int compareTo(TwoSeqOfMsaResult o) {
 		return refStart-o.getRefStart();
 	}
-	
 }

@@ -65,7 +65,7 @@ public class WGMSAAnnotationReadImplToGeneService {
 		}
 	}
 	
-	private void combineGenes(ArrayList<Gene> glist){
+	private synchronized void combineGenes(ArrayList<Gene> glist){
 		boolean ifcombined = false;
 		for(int i=0; i<glist.size(); i++){
 			Gene g1 = glist.get(i);
@@ -105,7 +105,7 @@ public class WGMSAAnnotationReadImplToGeneService {
 		}
 	}
 
-	private boolean if2GenesOverLap(Gene gene1, Gene gene2){
+	private synchronized boolean if2GenesOverLap(Gene gene1, Gene gene2){
 		if(gene1.getStart() <= gene2.getStart() && gene2.getStart() <= gene1.getEnd()){
 			return true;
 		}else if(gene1.getStart() <= gene2.getEnd() && gene2.getEnd() <= gene1.getEnd()){

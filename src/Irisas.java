@@ -38,7 +38,7 @@ public class Irisas {
 		helpMessage.append("     ExtractGenomeSequce             extract the genome sequence of each transcript\n");
 		helpMessage.append("     GenerateLofPed                  generate PLINK files of integrating effect\n");
 
-		helpMessage.append("  -- Several advanced testing functions (under testing)");
+		helpMessage.append("  -- Several advanced functions (under testing)");
 		helpMessage.append("\n");
 		helpMessage.append("     SdiSnpToPedMultipleAllic		 generate tped files of SNP with multiallelic enable\n");
 		helpMessage.append("     SdiIndelToPedMultipleAllic      generate tped files of INDEL with multiallelic enable\n");
@@ -56,7 +56,7 @@ public class Irisas {
 			new SdiSnpToPed(argv);
 		} else if ( argv[0].equalsIgnoreCase("SdiToIndelPlink") ){
 			new SdiIndelToPedV2(argv);
-		} 
+		}
 		// ORF-states related functions
 		else if ( argv[0].equalsIgnoreCase("ExtractCdsSequenceAndCheckFunc") ){
 			new ExtractCdsSequenceAndCheckORF(argv);

@@ -1,11 +1,13 @@
 package OtherFunctions.PopulationStructure.Model;
 
 
+import java.util.HashSet;
 
 public class MarkerPostion implements Comparable<MarkerPostion> {
 	private String chrName;
 	private int position;
 	private char colNaChar;
+	private HashSet<Character> states = new HashSet<Character>();
 	public MarkerPostion(String chrName, int position) {
 		this.chrName = chrName;
 		this.position = position;
@@ -59,6 +61,13 @@ public class MarkerPostion implements Comparable<MarkerPostion> {
 	public synchronized void setColNaChar(char colNaChar) {
 		this.colNaChar = colNaChar;
 	}
+	public synchronized HashSet<Character> getStates() {
+		return states;
+	}
+	public synchronized void setStates(HashSet<Character> states) {
+		this.states = states;
+	}
+
 	@Override
 	public synchronized int compareTo(MarkerPostion o) {
 		MarkerPostion m0 = this;

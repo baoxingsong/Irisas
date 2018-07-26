@@ -21,8 +21,9 @@ import java.util.*;
 samtools mpileup 515A.bam | perl -ne 'BEGIN{print "track type=wiggle_0 name=515A description=515A\n"};($c, $start, undef, $depth) = split; if ($c ne $lastC) { print "variableStep chrom=$c\n"; };$lastC=$c; print "$start\t$depth\n";'  > 515A.wig
 13 Mar. 2016
 */
+/*
 
-public class SdiSnpToPedMultipleAllic{
+public class SdiSnpToPed{
 	
 	private int threadNumber = 5;
 	private String accessionListFile;
@@ -30,26 +31,26 @@ public class SdiSnpToPedMultipleAllic{
 	private String genomeFolder;
 	private String sdiLocation;
 
-	public SdiSnpToPedMultipleAllic(){
+	public SdiSnpToPed(){
 
 	}
-	public void setThreadNumber(int threadNumber) {
+	public synchronized void setThreadNumber(int threadNumber) {
 		this.threadNumber = threadNumber;
 	}
-	public void setAccessionListFile(String accessionListFile) {
+	public synchronized void setAccessionListFile(String accessionListFile) {
 		this.accessionListFile = accessionListFile;
 	}
-	public void setRefName(String refName) {
+	public synchronized void setRefName(String refName) {
 		this.refName = refName;
 	}
-	public void setGenomeFolder(String genomeFolder) {
+	public synchronized void setGenomeFolder(String genomeFolder) {
 		this.genomeFolder = genomeFolder;
 	}
-	public void setSdiLocation(String sdiLocation) {
+	public synchronized void setSdiLocation(String sdiLocation) {
 		this.sdiLocation = sdiLocation;
 	}
 
-	public SdiSnpToPedMultipleAllic(String [] argv ){
+	public SdiSnpToPed(String [] argv ){
 		StringBuffer helpMessage=new StringBuffer("INDEL synchronization pipeline\nE-mail:song@mpipz.mpg.de\nArguments:\n");
         helpMessage.append("  -t   [integer] thread number (Default 5)\n");
         helpMessage.append("  -l   list of accession names\n");
@@ -116,7 +117,6 @@ public class SdiSnpToPedMultipleAllic{
 		ChromoSomeReadImpl chromoSomeReadImpl = new ChromoSomeReadImpl(genomeFolder + File.separator + refName +  ".fa");
 		BufferedReader reader = new BufferedReader(new FileReader(accessionListFile));
 		String tempString = null;
-		// read the accession list file begin
 		ArrayList<String> accessionNames = new ArrayList<String>();
 		try {
 			while ((tempString = reader.readLine()) != null) {
@@ -129,10 +129,9 @@ public class SdiSnpToPedMultipleAllic{
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		// read the accession list file end
-
-		//read all the sdi file and find all the position where has SNP record begin
-		int no_sdi_submitted=0;
+		
+		int no_sdi_submitted=0;	
+		
 		MarkerPostionsMap markerPostionsMap =new MarkerPostionsMap();
 		MyThreadCount threadCount1 = new MyThreadCount(0);
 		for(String ss : accessionNames){
@@ -163,19 +162,16 @@ public class SdiSnpToPedMultipleAllic{
 			}
 		}
 		System.out.println( "SDI read over" );
-		//read all the sdi file and find all the position where has SNP record end
-
-		// for all the SNP position find the allele of reference genome begin
+		
 		for( String key : markerPostionsMap.keySet() ){
 			MarkerPostionS markerPostions = markerPostionsMap.get(key);
 			if( chromoSomeReadImpl.getChromoSomeHashMap().containsKey(key) ){
-				for( Integer position : markerPostions.getMarkerPostions().keySet() ){
-					MarkerPostion markerPostion = markerPostions.getMarkerPostions().get(position);
-					char refNaChar = chromoSomeReadImpl.getChromoSomeById(key).getSequence().charAt(position-1);
+				for( MarkerPostion markerPostion : markerPostions.getMarkerPostions() ){
+					char refNaChar = chromoSomeReadImpl.getChromoSomeById(key).getSequence().charAt(markerPostion.getPosition()-1);
 					markerPostion.setColNaChar(refNaChar);
 				}
 			}
-		} // for all the SNP position find the allele of reference genome end
+		}
 		
 		int no_bw_submitted=0;
 		HashMap<String, HashMap<MarkerPostion, Character>> markerPostionAccessionsHashMap = new HashMap<String, HashMap<MarkerPostion, Character>>();
@@ -185,7 +181,7 @@ public class SdiSnpToPedMultipleAllic{
 			while(isThisThreadUnrun){
 				if(threadCount.getCount() < threadNumber){
 	            	threadCount.plusOne();
-	            	SdiSnpToPedMultipleAllicMultipleThread sdiSnpToPedMultipleThread = new SdiSnpToPedMultipleAllicMultipleThread ( genomeFolder, ss, markerPostionsMap, markerPostionAccessionsHashMap, threadCount, sdiLocation);
+	            	SdiSnpToPedMultipleThread sdiSnpToPedMultipleThread = new SdiSnpToPedMultipleThread( genomeFolder, ss, markerPostionsMap, markerPostionAccessionsHashMap, threadCount, sdiLocation);
 	            	//System.out.println(ss + " prepare to begin");
 	            	sdiSnpToPedMultipleThread.start();
 	            	no_bw_submitted++;
@@ -209,46 +205,48 @@ public class SdiSnpToPedMultipleAllic{
 		}
 		System.out.println("bam file checking end");
 // remove those position with more than two states begin
-//		for( String key : markerPostionsMap.keySet() ){
-//			MarkerPostionS markerPostions = markerPostionsMap.get(key);
-//			ArrayList<MarkerPostion> toRemoveMarkerPostions = new ArrayList<MarkerPostion>();
+		for( String key : markerPostionsMap.keySet() ){
+			MarkerPostionS markerPostions = markerPostionsMap.get(key);
+			ArrayList<MarkerPostion> toRemoveMarkerPostions = new ArrayList<MarkerPostion>();
 			//System.out.println("size "+ markerPostions.getMarkerPostions().size());
-//			for( MarkerPostion markerPostion : markerPostions.getMarkerPostions() ){
-//				HashSet<Character> chars = new HashSet<Character>();
-//				for( String accessionName : markerPostionAccessionsHashMap.keySet() ){
-//					char theChar;
-//					if( markerPostionAccessionsHashMap.get(accessionName).containsKey(markerPostion) ){
-//						theChar = markerPostionAccessionsHashMap.get(accessionName).get(markerPostion);
-//					}else{
-//						theChar = markerPostion.getColNaChar();
-//					}
-//					if( theChar=='A' || theChar=='T' || theChar=='C' || theChar=='G'){
-//						chars.add(theChar);
-//					}
-//				}
-//				char theChar = markerPostion.getColNaChar();
-//				if( theChar=='A' || theChar=='T' || theChar=='C' || theChar=='G'){
-//					chars.add(theChar);
-//				}
-//
-//				if( chars.size() != 2 ){
-//					toRemoveMarkerPostions.add(markerPostion);
-//				}
-//			}
-//			for( MarkerPostion markerPostion : toRemoveMarkerPostions ){
-//				markerPostions.remove(markerPostion);
-//			}
-//		}
+			for( MarkerPostion markerPostion : markerPostions.getMarkerPostions() ){
+				HashSet<Character> chars = new HashSet<Character>();
+				for( String accessionName : markerPostionAccessionsHashMap.keySet() ){
+					char theChar;
+					if( markerPostionAccessionsHashMap.get(accessionName).containsKey(markerPostion) ){
+						theChar = markerPostionAccessionsHashMap.get(accessionName).get(markerPostion);
+					}else{
+						theChar = markerPostion.getColNaChar();
+					}
+					if( theChar=='A' || theChar=='T' || theChar=='C' || theChar=='G'){
+						chars.add(theChar);
+					}
+				}
+				char theChar = markerPostion.getColNaChar();
+				if( theChar=='A' || theChar=='T' || theChar=='C' || theChar=='G'){
+					chars.add(theChar);
+				}
+	
+				if( chars.size() != 2 ){
+					toRemoveMarkerPostions.add(markerPostion);
+				}
+			}
+			for( MarkerPostion markerPostion : toRemoveMarkerPostions ){
+				markerPostions.remove(markerPostion);
+			}
+		}
 		// remove those position with more than two states end
 		
 		ArrayList<MarkerPostion> markerPostionAs = new ArrayList<MarkerPostion>();
 		for( String key : markerPostionsMap.keySet() ){
 			MarkerPostionS markerPostions = markerPostionsMap.get(key);
-			markerPostionAs.addAll( markerPostions.getMarkerPostions().values());
+			for( MarkerPostion markerPostion : markerPostions.getMarkerPostions() ){
+				markerPostionAs.add(markerPostion);
+			}
 		}
 
 		Collections.sort(markerPostionAs);
-		PrintWriter outPut = new PrintWriter("sdi_multi_allic_snp.ped");
+		PrintWriter outPut = new PrintWriter("snp.ped");		
 		for( String accessionName : markerPostionAccessionsHashMap.keySet() ){
 			String accessionName2=accessionName;
 			accessionName2=accessionName2.replaceAll("\\.SDI", "");
@@ -263,21 +261,15 @@ public class SdiSnpToPedMultipleAllic{
 					theChar = markerPostion.getColNaChar();
 				}
 				if( theChar == 'A' ){
-					outPut.print("	1 1");
+					outPut.print("	A A");
 				}else if( theChar == 'T' ){
-					outPut.print("	2 2");
+					outPut.print("	T T");
 				}else if( theChar == 'G' ){
-					outPut.print("	3 3");
+					outPut.print("	G G");
 				}else if( theChar == 'C' ){
-					outPut.print("	4 4");
-				}else if (theChar == '-'){
-					outPut.print("	5 5");
-				}else if ( theChar == '+' ){ // reverse or some other replacement
-					outPut.print("	6 6");
-				}else if( theChar == 'N' ){ // low coverage
-					outPut.print("	7 7");
-				}else {
-					outPut.print("	0 0");// missing value
+					outPut.print("	C C");
+				}else{
+					outPut.print("	0 0");
 				}
 			}
 			outPut.print("\n");
@@ -287,20 +279,20 @@ public class SdiSnpToPedMultipleAllic{
 			MarkerPostion markerPostion = markerPostionAs.get(i);
 			char theChar = markerPostion.getColNaChar();
 			if( theChar == 'A' ){
-				outPut.print("	1 1");
+				outPut.print("	A A");
 			}else if( theChar == 'T' ){
-				outPut.print("	2 2");
+				outPut.print("	T T");
 			}else if( theChar == 'G' ){
-				outPut.print("	3 3");
+				outPut.print("	G G");
 			}else if( theChar == 'C' ){
-				outPut.print("	4 4");
+				outPut.print("	C C");
 			}else{
 				outPut.print("	0 0");
 			}
 		}
 		outPut.print("\n");
 		outPut.close();
-		PrintWriter outPutIDMap = new PrintWriter("sdi_multi_allic_snp.map");
+		PrintWriter outPutIDMap = new PrintWriter("snp.map");
 		for( int i =0; i < markerPostionAs.size(); i++ ){
 			MarkerPostion markerPostion = markerPostionAs.get(i);
 			String chrname = markerPostion.getChrName();
@@ -311,14 +303,14 @@ public class SdiSnpToPedMultipleAllic{
 	}
 }
 
-class SdiSnpToPedMultipleAllicMultipleThread  extends Thread{
+class SdiSnpToPedMultipleThread extends Thread{
 	private String folderLocation;
 	private String accessionName;
 	private MarkerPostionsMap markerPostionsMap;
 	private HashMap<String, HashMap<MarkerPostion, Character>> markerPostionAccessionsHashMap;
 	private MyThreadCount threadCount;
 	private String sdiLocation;
-	public SdiSnpToPedMultipleAllicMultipleThread (String folderLocation, String accessionName, MarkerPostionsMap markerPostionsMap, HashMap<String, HashMap<MarkerPostion, Character>> markerPostionAccessionsHashMap, MyThreadCount threadCount, String sdiLocation){
+	public SdiSnpToPedMultipleThread(String folderLocation, String accessionName, MarkerPostionsMap markerPostionsMap, HashMap<String, HashMap<MarkerPostion, Character>> markerPostionAccessionsHashMap, MyThreadCount threadCount, String sdiLocation){
 		this.folderLocation=folderLocation;
 		this.accessionName = accessionName;
 		this.markerPostionsMap = markerPostionsMap;
@@ -339,53 +331,43 @@ class SdiSnpToPedMultipleAllicMultipleThread  extends Thread{
 		
 			MapFileImpl mapFileImpl = new MapFileImpl( sdiLocation + File.separator +accessionName + ".sdi");
 			for( String key : markerPostionsMap.keySet() ){	
-				for( Integer position : markerPostionsMap.get(key).getMarkerPostions().keySet() ){
-					MarkerPostion markerPostion = markerPostionsMap.get(key).getMarkerPostions().get(position);
-					boolean thisTranscriptIsReliable = true;
-					Contig result = wig.query(key, markerPostion.getPosition(), markerPostion.getPosition());
-					double thisMean = result.mean();
-					if(  Double.isNaN(thisMean) || thisMean<2 ){
-						thisTranscriptIsReliable = false;
-					}
-
+				for( MarkerPostion markerPostion : markerPostionsMap.get(key).getMarkerPostions() ){
 					HashSet<MapSingleRecord> mapSingleRecords = mapFileImpl.getOverLapRecordsByBasing( markerPostion.getChrName(), markerPostion.getPosition() );
 					if( mapSingleRecords.size() > 0 ){
 						for( MapSingleRecord mapSingleRecord : mapSingleRecords ){
-							//if( thisTranscriptIsReliable ){
+							boolean thisTranscriptIsReliable = true;
+							Contig result = wig.query(key, markerPostion.getPosition(), markerPostion.getPosition());
+							double thisMean = result.mean();
+							if(  Double.isNaN(thisMean) || thisMean<2 ){
+								thisTranscriptIsReliable = false;
+							}
+							if( thisTranscriptIsReliable ){
 								if( mapSingleRecord.getBasement() == markerPostion.getPosition() && mapSingleRecord.getChanged()==0 && mapSingleRecord.getOriginal().length()==1 && !mapSingleRecord.getOriginal().contains("-") && mapSingleRecord.getResult().length()==1 ){
-									char alternative = mapSingleRecord.getResult().toUpperCase().charAt(0);
-									if( alternative=='A' || alternative=='C' || alternative=='G' || alternative=='T' ) { // if there is an IUPAC code, take it as same with reference
-										markerPostionHashMap.put(markerPostion, alternative); // this is a SNP
-									}
+									markerPostionHashMap.put(markerPostion, mapSingleRecord.getResult().toUpperCase().charAt(0));
 								} else if ( mapSingleRecord.getBasement() <= markerPostion.getPosition() && mapSingleRecord.getChanged()>0 && mapSingleRecord.getOriginal().contains("-") ){
-									// there is an insertion around
+
 								} else if ( mapSingleRecord.getBasement() <= markerPostion.getPosition() && mapSingleRecord.getChanged() < 0 && (mapSingleRecord.getBasement()+Math.abs(mapSingleRecord.getChanged())-1) >= markerPostion.getPosition() && mapSingleRecord.getResult().contains("-") ){
-									markerPostionHashMap.put(markerPostion, '-'); // deletion
+									markerPostionHashMap.put(markerPostion, '-');
 								} else if ( mapSingleRecord.getBasement() <= markerPostion.getPosition() && (mapSingleRecord.getBasement() + mapSingleRecord.getOriginal().length()) > markerPostion.getPosition() ) {
-									markerPostionHashMap.put(markerPostion, '+'); // this for some reversion or fragment replacement.
+									markerPostionHashMap.put(markerPostion, 'N');
 								}
-//							}else {
-//								if (mapSingleRecord.getBasement() <= markerPostion.getPosition() && mapSingleRecord.getChanged() < 0 && (mapSingleRecord.getBasement() + Math.abs(mapSingleRecord.getChanged()) - 1) >= markerPostion.getPosition() && mapSingleRecord.getResult().contains("-")) {
-//									markerPostionHashMap.put(markerPostion, '-'); // deletion
-//								} else {
-//									markerPostionHashMap.put(markerPostion, 'N'); // low coverage
-//								}
-//							}
+							}else{
+								markerPostionHashMap.put(markerPostion, 'N'); // low coverage
+							}
 						}
-					}else{
-						if( thisTranscriptIsReliable ){ // same with reference
+					}else{ // this is added after generating public result begin
+						boolean thisTranscriptIsReliable = true;
+						Contig result = wig.query(key, markerPostion.getPosition(), markerPostion.getPosition());
+						double thisMean = result.mean();
+						if(  Double.isNaN(thisMean) || thisMean<2 ){
+							thisTranscriptIsReliable = false;
+						}
+						if( thisTranscriptIsReliable ){
 
 						}else{
 							markerPostionHashMap.put(markerPostion, 'N'); // low coverage
 						}
-					}
-					if ( !thisTranscriptIsReliable && mapSingleRecords.size()==1 ){ // if there is no reads and there is only a insertion records, this position is encoded as missing
-						for( MapSingleRecord mapSingleRecord : mapSingleRecords ) {
-							if ( mapSingleRecord.getBasement() <= markerPostion.getPosition() && mapSingleRecord.getChanged()>0 && mapSingleRecord.getOriginal().contains("-") ){
-								markerPostionHashMap.put(markerPostion, 'N'); // low coverage
-							}
-						}
-					}
+					}// this is added after generating public result end
 				}
 			}
 		} catch (WigFileFormatException | IOException | WigFileException e) {
@@ -398,3 +380,19 @@ class SdiSnpToPedMultipleAllicMultipleThread  extends Thread{
 	}
 }
 
+class MarkerPostionsMap{
+	HashMap<String, MarkerPostionS> markerPoMap =new HashMap<String, MarkerPostionS>();
+	public synchronized MarkerPostionS get(String key) {
+		return markerPoMap.get(key);
+	}
+	public synchronized Set<String> keySet() {
+		return markerPoMap.keySet();
+	}
+	public synchronized boolean containsKey( String key ){
+		return markerPoMap.containsKey(key);
+	}
+	public synchronized void put(String chrName, MarkerPostionS markerPostionS) {
+		markerPoMap.put(chrName, markerPostionS);
+	}
+}
+*/

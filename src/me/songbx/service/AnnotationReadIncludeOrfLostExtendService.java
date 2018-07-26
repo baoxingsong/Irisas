@@ -87,7 +87,4 @@ public class AnnotationReadIncludeOrfLostExtendService {
 			AnnotationReadImplToGeneService annotationReadImplToGeneService) {
 		this.annotationReadImplToGeneService = annotationReadImplToGeneService;
 	}
-	
-
-
 }
