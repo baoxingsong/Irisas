@@ -257,11 +257,7 @@ public class EasyRun {
         sdiSnpToPed.setRefName( refName);
         sdiSnpToPed.setGenomeFolder( genomeFolder);
         sdiSnpToPed.setSdiLocation(newsdiFileLocation);
-        try {
-            sdiSnpToPed.doIt();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        sdiSnpToPed.doIt();
         // sdi to SNP plink end
         System.err.print("SNP PLINK files are ready");
 

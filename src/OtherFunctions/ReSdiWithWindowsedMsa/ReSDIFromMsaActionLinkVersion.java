@@ -109,7 +109,7 @@ public class ReSDIFromMsaActionLinkVersion {
 		System.gc();
 		myExecutor.shutdown();
 		try {
-			myExecutor.awaitTermination(2, TimeUnit.HOURS);
+			myExecutor.awaitTermination(200, TimeUnit.HOURS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -163,7 +163,7 @@ public class ReSDIFromMsaActionLinkVersion {
 		System.gc();
 		myExecutor1.shutdown();
 		try {
-			myExecutor1.awaitTermination(2, TimeUnit.HOURS);
+			myExecutor1.awaitTermination(2000, TimeUnit.HOURS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

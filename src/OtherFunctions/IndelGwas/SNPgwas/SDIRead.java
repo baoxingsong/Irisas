@@ -19,14 +19,12 @@ public
 class SDIRead  extends Thread{
 	private String folderLocation;
 	private MarkerPostionsMap markerPostionsMap;
-//	private MyThreadCount threadCount;
 	private String accessionName;
 	private ChromoSomeReadImpl chromoSomeReadImpl;
 	public SDIRead(String folderLocation, MarkerPostionsMap markerPostionsMap,/*
 			MyThreadCount threadCount, */String accessionName, ChromoSomeReadImpl chromoSomeReadImpl){
 		this.folderLocation=folderLocation;
 		this.markerPostionsMap=markerPostionsMap;
-		//this.threadCount=threadCount;
 		this.accessionName=accessionName;
 		this.chromoSomeReadImpl=chromoSomeReadImpl;	
 	}
@@ -35,8 +33,7 @@ class SDIRead  extends Thread{
 			System.out.println("reading the sdi file of " + accessionName);
 			BufferedReader reader = new BufferedReader(new FileReader(folderLocation + File.separator + accessionName + ".sdi"));
 			String tempString;
-//			Pattern p = Pattern.compile("^([ATCGatcg]$)"); // if there is an IUPAC code, we treat it as same with reference and ignore it
-//			Matcher m;
+
 			Character newAllelic;
 			int position;
 			while ((tempString = reader.readLine()) != null) {
@@ -60,6 +57,7 @@ class SDIRead  extends Thread{
 				}
 			}
 			reader.close();
+            System.out.println("done read the sdi file of " + accessionName);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

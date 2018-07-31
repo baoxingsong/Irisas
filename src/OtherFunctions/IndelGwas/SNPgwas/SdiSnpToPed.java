@@ -3,6 +3,7 @@ package OtherFunctions.IndelGwas.SNPgwas;
 import OtherFunctions.PopulationStructure.Model.MarkerPostion;
 import OtherFunctions.PopulationStructure.Model.MarkerPostionS;
 import me.songbx.action.parallel.model.SysOutPut;
+import me.songbx.action.parallel.model.SysHashMap;
 import edu.unc.genomics.Contig;
 import edu.unc.genomics.io.WigFileException;
 import edu.unc.genomics.io.WigFileFormatException;
@@ -107,19 +108,15 @@ public class SdiSnpToPed{
         	System.err.println(helpMessage);
             System.exit(1);
         }
-        try {
-			doIt();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
+        doIt();
 	}
 	
-	public void doIt() throws FileNotFoundException{
+	public void doIt(){
 		ChromoSomeReadImpl chromoSomeReadImpl = new ChromoSomeReadImpl(genomeFolder + File.separator + refName +  ".fa");
-		BufferedReader reader = new BufferedReader(new FileReader(accessionListFile));
-		String tempString;
-		ArrayList<String> accessionNames = new ArrayList<String>();
+		ArrayList<String> accessionNames = new ArrayList<String>(2000);
 		try {
+            BufferedReader reader = new BufferedReader(new FileReader(accessionListFile));
+            String tempString;
 			while ((tempString = reader.readLine()) != null) {
 				if( tempString.equalsIgnoreCase(refName) ){
 					
@@ -127,15 +124,16 @@ public class SdiSnpToPed{
 					accessionNames.add(tempString);
 				}
 			}
+            reader.close();
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
 		
-		ArrayList<String> chrs = new ArrayList<String>();
-		MarkerPostionsMap markerPostionsMap =new MarkerPostionsMap();
+		ArrayList<String> chrs = new ArrayList<String>(50);
+		MarkerPostionsMap markerPostionsMap = new MarkerPostionsMap(50);
 		for( String chrName : chromoSomeReadImpl.getChromoSomeHashMap().keySet() ){
 			chrs.add(chrName);
-			markerPostionsMap.put(chrName, new MarkerPostionS());
+			markerPostionsMap.put(chrName, new MarkerPostionS(2000000)); //0.5 M markers on each chromosome
 		}
 		Collections.sort(chrs);
 
@@ -145,25 +143,21 @@ public class SdiSnpToPed{
 		}
 		myExecutor1.shutdown();
 		try {
-			myExecutor1.awaitTermination(2, TimeUnit.HOURS);
+			myExecutor1.awaitTermination(200, TimeUnit.HOURS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		System.out.println( "SDI read over" );
 		
 		for( String key : markerPostionsMap.keySet() ){
-			MarkerPostionS markerPostions = markerPostionsMap.get(key);
-			if( chromoSomeReadImpl.getChromoSomeHashMap().containsKey(key) ){
-				for(  int position : markerPostions.getMarkerPostions().keySet() ){
-					MarkerPostion markerPostion = markerPostions.getMarkerPostions().get(position);
-					char refNaChar = chromoSomeReadImpl.getChromoSomeById(key).getSequence().charAt(markerPostion.getPosition()-1);
-					markerPostion.setColNaChar(refNaChar);
-					markerPostion.getStates().add(refNaChar);
-				}
-			}
+            for( int position : markerPostionsMap.get(key).getMarkerPostions().keySet() ){
+                char refNaChar = chromoSomeReadImpl.getChromoSomeById(key).getSequence().charAt(markerPostionsMap.get(key).getMarkerPostions().get(position).getPosition()-1);
+                markerPostionsMap.get(key).getMarkerPostions().get(position).setColNaChar(refNaChar);
+                markerPostionsMap.get(key).getMarkerPostions().get(position).getStates().add(refNaChar);
+            }
 		}
 
-		HashMap<String, ArrayList<MarkerPostion>> markerPostionAs = new HashMap<String, ArrayList<MarkerPostion>>();
+		SysHashMap<String, ArrayList<MarkerPostion>> markerPostionAs = new SysHashMap<String, ArrayList<MarkerPostion>>();
 		// remove those position with more than two states begin
 		for( String chr : markerPostionsMap.keySet() ){
 			markerPostionAs.put(chr, new ArrayList<MarkerPostion>());
@@ -175,7 +169,6 @@ public class SdiSnpToPed{
 						markerPostionAs.get(chr).add(markerPostionsMap.get(chr).getMarkerPostions().get(position));
 					}
 				}
-
 			}
 			if( markerPostionAs.get(chr).size() > 1 ){
 				Collections.sort(markerPostionAs.get(chr));
@@ -183,15 +176,19 @@ public class SdiSnpToPed{
 			System.out.println(chr + " size " + markerPostionAs.get(chr).size());
 		}// remove those position with more than two states end
 
-
-		SysOutPut pedOutPut = new SysOutPut("snp.ped");
+		SysOutPut pedOutPut = null;
+        try {
+            pedOutPut = new SysOutPut("snp.ped");
+        } catch (FileNotFoundException e1) {
+            e1.printStackTrace();
+        }
 		ExecutorService myExecutor = Executors.newFixedThreadPool(threadNumber);
 		for(String accessionName : accessionNames){
 			myExecutor.execute( new SdiSnpToPedMultipleThread( genomeFolder, accessionName, markerPostionAs, sdiLocation, pedOutPut, chrs));
 		}
 		myExecutor.shutdown();
 		try {
-			myExecutor.awaitTermination(2, TimeUnit.HOURS);
+			myExecutor.awaitTermination(2000, TimeUnit.HOURS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -200,8 +197,7 @@ public class SdiSnpToPed{
 		pedOutPut.print("ref" + " " + "ref" + " 0 0 1	1");
 		for( String chr : chrs ) {
 			if (markerPostionAs.get(chr).size() > 0) {
-				for (int i = 0; i < markerPostionAs.size(); i++) {
-					MarkerPostion markerPostion = markerPostionAs.get(chr).get(i);
+				for (MarkerPostion markerPostion : markerPostionAs.get(chr)) {
 					char theChar = markerPostion.getColNaChar();
 					if (theChar == 'A') {
 						pedOutPut.print("	A A");
@@ -219,30 +215,33 @@ public class SdiSnpToPed{
 		}
 		pedOutPut.print("\n");
 		pedOutPut.close();
-		PrintWriter outPutIDMap = new PrintWriter("snp.map");
-		for( String chr : chrs ) {
-			if (markerPostionAs.get(chr).size() > 0) {
-				for (int i = 0; i < markerPostionAs.size(); i++) {
-					MarkerPostion markerPostion = markerPostionAs.get(chr).get(i);
-					String chrname = markerPostion.getChrName();
-					chrname = chrname.replace("Chr", "");
-					outPutIDMap.println(chrname + "\t" + chrname + "_" + markerPostion.getPosition() + "_" + markerPostion.getColNaChar() + "\t0\t" + markerPostion.getPosition());
-				}
-			}
-		}
-		outPutIDMap.close();
+        try {
+            PrintWriter outPutIDMap = new PrintWriter("snp.map");
+            for( String chr : chrs ) {
+                if (markerPostionAs.get(chr).size() > 0) {
+                    for (MarkerPostion markerPostion : markerPostionAs.get(chr)) {
+                        String chrname = markerPostion.getChrName();
+                        chrname = chrname.replace("Chr", "");
+                        outPutIDMap.println(chrname + "\t" + chrname + "_" + markerPostion.getPosition() + "_" + markerPostion.getColNaChar() + "\t0\t" + markerPostion.getPosition());
+                    }
+                }
+            }
+            outPutIDMap.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 	}
 }
 
 class SdiSnpToPedMultipleThread extends Thread{
 	private String folderLocation;
 	private String accessionName;
-	private HashMap<String, ArrayList<MarkerPostion>> markerPostionAs;
+	private SysHashMap<String, ArrayList<MarkerPostion>> markerPostionAs;
 	private String sdiLocation;
 	private SysOutPut pedOutPut;
 	private ArrayList<String> chrs;
 	public SdiSnpToPedMultipleThread(String folderLocation, String accessionName,
-									 HashMap<String, ArrayList<MarkerPostion>> markerPostionAs,
+                                     SysHashMap<String, ArrayList<MarkerPostion>> markerPostionAs,
 									 String sdiLocation, SysOutPut pedOutPut, ArrayList<String> chrs){
 		this.folderLocation = folderLocation;
 		this.accessionName = accessionName;
@@ -265,17 +264,16 @@ class SdiSnpToPedMultipleThread extends Thread{
 			MapFileImpl mapFileImpl = new MapFileImpl( sdiLocation + File.separator +accessionName + ".sdi");
 			for( String chr : chrs ){
 				if(markerPostionAs.get(chr).size()>0) {
+                    System.out.println("running " + accessionName + " " + chr);
 					for (MarkerPostion markerPostion : markerPostionAs.get(chr)) {
 						HashSet<MapSingleRecord> mapSingleRecords = mapFileImpl.getOverLapRecordsByBasing(markerPostion.getChrName(), markerPostion.getPosition());
 						if (mapSingleRecords.size() > 0) {
 							for (MapSingleRecord mapSingleRecord : mapSingleRecords) {
-								boolean thisTranscriptIsReliable = true;
 								Contig result = wig.query(markerPostion.getChrName(), markerPostion.getPosition(), markerPostion.getPosition());
 								double thisMean = result.mean();
 								if (Double.isNaN(thisMean) || thisMean < 2) {
-									thisTranscriptIsReliable = false;
-								}
-								if (thisTranscriptIsReliable) {
+                                    markerPostionHashMap.put(markerPostion, 'N'); // low coverage
+								} else {
 									if (mapSingleRecord.getBasement() == markerPostion.getPosition() && mapSingleRecord.getChanged() == 0 && mapSingleRecord.getOriginal().length() == 1 && !mapSingleRecord.getOriginal().contains("-") && mapSingleRecord.getResult().length() == 1) {
 										markerPostionHashMap.put(markerPostion, mapSingleRecord.getResult().toUpperCase().charAt(0));
 									} else if (mapSingleRecord.getBasement() <= markerPostion.getPosition() && mapSingleRecord.getChanged() > 0 && mapSingleRecord.getOriginal().contains("-")) {
@@ -285,63 +283,60 @@ class SdiSnpToPedMultipleThread extends Thread{
 									} else if (mapSingleRecord.getBasement() <= markerPostion.getPosition() && (mapSingleRecord.getBasement() + mapSingleRecord.getOriginal().length()) > markerPostion.getPosition()) {
 										markerPostionHashMap.put(markerPostion, 'N');
 									}
-								} else {
-									markerPostionHashMap.put(markerPostion, 'N'); // low coverage
 								}
 							}
 						} else { // this is added after generating public result begin
-							boolean thisTranscriptIsReliable = true;
 							Contig result = wig.query(markerPostion.getChrName(), markerPostion.getPosition(), markerPostion.getPosition());
 							double thisMean = result.mean();
 							if (Double.isNaN(thisMean) || thisMean < 2) {
-								thisTranscriptIsReliable = false;
-							}
-							if (thisTranscriptIsReliable) {
-
-							} else {
-								markerPostionHashMap.put(markerPostion, 'N'); // low coverage
+                                markerPostionHashMap.put(markerPostion, 'N'); // low coverage
 							}
 						}// this is added after generating public result end
 					}
+                    System.out.println("done " + accessionName + " " + chr);
 				}
 			}
-
-			StringBuffer thisResult = new StringBuffer();
-			thisResult.append(accessionName + " " + accessionName + " 0 0 1	1");
-			for( String chr : chrs) {
-				if(markerPostionAs.get(chr).size()>0) {
-					for (int i = 0; i < markerPostionAs.size(); i++) {
-						MarkerPostion markerPostion = markerPostionAs.get(chr).get(i);
-						char theChar;
-						if (markerPostionHashMap.containsKey(markerPostion)) {
-							theChar = markerPostionHashMap.get(markerPostion);
-						} else {
-							theChar = markerPostion.getColNaChar();
-						}
-						if (theChar == 'A') {
-							thisResult.append("	A A");
-						} else if (theChar == 'T') {
-							thisResult.append("	T T");
-						} else if (theChar == 'G') {
-							thisResult.append("	G G");
-						} else if (theChar == 'C') {
-							thisResult.append("	C C");
-						} else {
-							thisResult.append("	0 0");
-						}
-					}
-				}
-			}
-			pedOutPut.println(thisResult.toString());
 		} catch (WigFileFormatException | IOException | WigFileException e) {
 			e.printStackTrace();
 		}
+        StringBuffer thisResult = new StringBuffer();
+        thisResult.append(accessionName + " " + accessionName + " 0 0 1	1");
+        for( String chr : chrs) {
+            if(markerPostionAs.get(chr).size()>0) {
+                for (MarkerPostion markerPostion : markerPostionAs.get(chr)) {
+                    char theChar;
+                    if (markerPostionHashMap.containsKey(markerPostion)) {
+                        theChar = markerPostionHashMap.get(markerPostion);
+                    } else {
+                        theChar = markerPostion.getColNaChar();
+                    }
+                    if (theChar == 'A') {
+                        thisResult.append("	A A");
+                    } else if (theChar == 'T') {
+                        thisResult.append("	T T");
+                    } else if (theChar == 'G') {
+                        thisResult.append("	G G");
+                    } else if (theChar == 'C') {
+                        thisResult.append("	C C");
+                    } else {
+                        thisResult.append("	0 0");
+                    }
+                }
+            }
+        }
+        pedOutPut.println(thisResult.toString());
 		System.out.println(accessionName + " finished");
 	}
 }
 
 class MarkerPostionsMap{
-	HashMap<String, MarkerPostionS> markerPoMap =new HashMap<String, MarkerPostionS>();
+	private SysHashMap<String, MarkerPostionS> markerPoMap;
+	public MarkerPostionsMap(){
+		markerPoMap =new SysHashMap<String, MarkerPostionS>();
+	}
+	public MarkerPostionsMap( int initialSize){
+		markerPoMap =new SysHashMap<String, MarkerPostionS>(initialSize);
+	}
 	public synchronized MarkerPostionS get(String key) {
 		return markerPoMap.get(key);
 	}
