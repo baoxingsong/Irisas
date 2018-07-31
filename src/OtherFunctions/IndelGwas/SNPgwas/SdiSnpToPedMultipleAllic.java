@@ -16,6 +16,9 @@ import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /* generate wig file
 samtools mpileup 515A.bam | perl -ne 'BEGIN{print "track type=wiggle_0 name=515A description=515A\n"};($c, $start, undef, $depth) = split; if ($c ne $lastC) { print "variableStep chrom=$c\n"; };$lastC=$c; print "$start\t$depth\n";'  > 515A.wig
@@ -132,8 +135,9 @@ public class SdiSnpToPedMultipleAllic{
 		// read the accession list file end
 
 		//read all the sdi file and find all the position where has SNP record begin
+		/*
 		int no_sdi_submitted=0;
-		MarkerPostionsMap markerPostionsMap =new MarkerPostionsMap();
+
 		MyThreadCount threadCount1 = new MyThreadCount(0);
 		for(String ss : accessionNames){
 			boolean isThisThreadUnrun=true;
@@ -162,11 +166,31 @@ public class SdiSnpToPedMultipleAllic{
 				e.printStackTrace();
 			}
 		}
+*/
+
+		ArrayList<String> chrs = new ArrayList<String>(50);
+		MarkerPostionsMap markerPostionsMap =new MarkerPostionsMap(50);
+		for( String chrName : chromoSomeReadImpl.getChromoSomeHashMap().keySet() ){
+			chrs.add(chrName);
+			markerPostionsMap.put(chrName, new MarkerPostionS(5000000)); //0.5 M markers on each chromosome
+		}
+		Collections.sort(chrs);
+
+		ExecutorService myExecutor1 = Executors.newFixedThreadPool(threadNumber);
+		for(String accessionName : accessionNames){
+			myExecutor1.execute( new SDIRead(sdiLocation, markerPostionsMap, accessionName, chromoSomeReadImpl));
+		}
+		myExecutor1.shutdown();
+		try {
+			myExecutor1.awaitTermination(2, TimeUnit.HOURS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		System.out.println( "SDI read over" );
 		//read all the sdi file and find all the position where has SNP record end
 
 		// for all the SNP position find the allele of reference genome begin
-		for( String key : markerPostionsMap.keySet() ){
+		for( String key : chrs ){
 			MarkerPostionS markerPostions = markerPostionsMap.get(key);
 			if( chromoSomeReadImpl.getChromoSomeHashMap().containsKey(key) ){
 				for( Integer position : markerPostions.getMarkerPostions().keySet() ){
@@ -176,7 +200,8 @@ public class SdiSnpToPedMultipleAllic{
 				}
 			}
 		} // for all the SNP position find the allele of reference genome end
-		
+
+
 		int no_bw_submitted=0;
 		HashMap<String, HashMap<MarkerPostion, Character>> markerPostionAccessionsHashMap = new HashMap<String, HashMap<MarkerPostion, Character>>();
 		MyThreadCount threadCount = new MyThreadCount(0);
@@ -240,72 +265,86 @@ public class SdiSnpToPedMultipleAllic{
 //			}
 //		}
 		// remove those position with more than two states end
-		
-		ArrayList<MarkerPostion> markerPostionAs = new ArrayList<MarkerPostion>();
+
+		HashMap<String, ArrayList<MarkerPostion>> markerPostionAs = new HashMap<String, ArrayList<MarkerPostion>>();
 		for( String key : markerPostionsMap.keySet() ){
+			markerPostionAs.put(key, new ArrayList<MarkerPostion>());
 			MarkerPostionS markerPostions = markerPostionsMap.get(key);
-			markerPostionAs.addAll( markerPostions.getMarkerPostions().values());
+			markerPostionAs.get(key).addAll( markerPostions.getMarkerPostions().values());
+			Collections.sort(markerPostionAs.get(key));
 		}
 
-		Collections.sort(markerPostionAs);
+
 		PrintWriter outPut = new PrintWriter("sdi_multi_allic_snp.ped");
 		for( String accessionName : markerPostionAccessionsHashMap.keySet() ){
 			String accessionName2=accessionName;
 			accessionName2=accessionName2.replaceAll("\\.SDI", "");
 			accessionName2=accessionName2.replaceAll("\\.sdi", "");
 			outPut.print(accessionName2 + " " + accessionName2 + " 0 0 1	1");
-			for( int i =0; i < markerPostionAs.size(); i++ ){
-				MarkerPostion markerPostion = markerPostionAs.get(i);
-				char theChar;
-				if( markerPostionAccessionsHashMap.get(accessionName).containsKey(markerPostion) ){
-					theChar = markerPostionAccessionsHashMap.get(accessionName).get(markerPostion);
-				}else{
-					theChar = markerPostion.getColNaChar();
-				}
-				if( theChar == 'A' ){
-					outPut.print("	1 1");
-				}else if( theChar == 'T' ){
-					outPut.print("	2 2");
-				}else if( theChar == 'G' ){
-					outPut.print("	3 3");
-				}else if( theChar == 'C' ){
-					outPut.print("	4 4");
-				}else if (theChar == '-'){
-					outPut.print("	5 5");
-				}else if ( theChar == '+' ){ // reverse or some other replacement
-					outPut.print("	6 6");
-				}else if( theChar == 'N' ){ // low coverage
-					outPut.print("	7 7");
-				}else {
-					outPut.print("	0 0");// missing value
+			for( String chr : chrs) {
+				if( markerPostionAs.get(chr).size()>0 ){
+					for (int i = 0; i < markerPostionAs.get(chr).size(); i++) {
+						MarkerPostion markerPostion = markerPostionAs.get(chr).get(i);
+						char theChar;
+						if (markerPostionAccessionsHashMap.get(accessionName).containsKey(markerPostion)) {
+							theChar = markerPostionAccessionsHashMap.get(accessionName).get(markerPostion);
+						} else {
+							theChar = markerPostion.getColNaChar();
+						}
+						if (theChar == 'A') {
+							outPut.print("	1 1");
+						} else if (theChar == 'T') {
+							outPut.print("	2 2");
+						} else if (theChar == 'G') {
+							outPut.print("	3 3");
+						} else if (theChar == 'C') {
+							outPut.print("	4 4");
+						} else if (theChar == '-') {
+							outPut.print("	5 5");
+						} else if (theChar == '+') { // reverse or some other replacement
+							outPut.print("	6 6");
+						} else if (theChar == 'N') { // low coverage
+							outPut.print("	7 7");
+						} else {
+							outPut.print("	0 0");// missing value
+						}
+					}
 				}
 			}
 			outPut.print("\n");
 		}
 		outPut.print("ref" + " " + "ref" + " 0 0 1	1");
-		for( int i =0; i < markerPostionAs.size(); i++ ){
-			MarkerPostion markerPostion = markerPostionAs.get(i);
-			char theChar = markerPostion.getColNaChar();
-			if( theChar == 'A' ){
-				outPut.print("	1 1");
-			}else if( theChar == 'T' ){
-				outPut.print("	2 2");
-			}else if( theChar == 'G' ){
-				outPut.print("	3 3");
-			}else if( theChar == 'C' ){
-				outPut.print("	4 4");
-			}else{
-				outPut.print("	0 0");
+		for( String chr : chrs) {
+			if (markerPostionAs.get(chr).size() > 0) {
+				for (int i = 0; i < markerPostionAs.size(); i++) {
+					MarkerPostion markerPostion = markerPostionAs.get(chr).get(i);
+					char theChar = markerPostion.getColNaChar();
+					if (theChar == 'A') {
+						outPut.print("	1 1");
+					} else if (theChar == 'T') {
+						outPut.print("	2 2");
+					} else if (theChar == 'G') {
+						outPut.print("	3 3");
+					} else if (theChar == 'C') {
+						outPut.print("	4 4");
+					} else {
+						outPut.print("	0 0");
+					}
+				}
 			}
 		}
 		outPut.print("\n");
 		outPut.close();
 		PrintWriter outPutIDMap = new PrintWriter("sdi_multi_allic_snp.map");
-		for( int i =0; i < markerPostionAs.size(); i++ ){
-			MarkerPostion markerPostion = markerPostionAs.get(i);
-			String chrname = markerPostion.getChrName();
-			chrname = chrname.replace("Chr", "");
-			outPutIDMap.println(chrname + "\t" + chrname+"_"+markerPostion.getPosition()+"_"+markerPostion.getColNaChar() + "\t0\t" + markerPostion.getPosition());
+		for( String chr : chrs) {
+			if (markerPostionAs.get(chr).size() > 0) {
+				for (int i = 0; i < markerPostionAs.get(chr).size(); i++) {
+					MarkerPostion markerPostion = markerPostionAs.get(chr).get(i);
+					String chrname = markerPostion.getChrName();
+					chrname = chrname.replace("Chr", "");
+					outPutIDMap.println(chrname + "\t" + chrname + "_" + markerPostion.getPosition() + "_" + markerPostion.getColNaChar() + "\t0\t" + markerPostion.getPosition());
+				}
+			}
 		}
 		outPutIDMap.close();
 	}

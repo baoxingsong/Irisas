@@ -268,7 +268,7 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 				}
 				myExecutor.shutdown();
 				try {
-					myExecutor.awaitTermination(2, TimeUnit.HOURS);
+					myExecutor.awaitTermination(200, TimeUnit.HOURS);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -285,7 +285,7 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 				//System.out.println(runingThreads + " threads is runing. With maximum threads " + threadNumber);
 				myExecutor2.shutdown();
 				try {
-					myExecutor2.awaitTermination(2, TimeUnit.HOURS);
+					myExecutor2.awaitTermination(2000, TimeUnit.HOURS);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -305,7 +305,7 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 		}
 		myExecutor.shutdown();
 		try {
-			myExecutor.awaitTermination(2, TimeUnit.HOURS);
+			myExecutor.awaitTermination(200, TimeUnit.HOURS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -322,7 +322,7 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 //			System.out.println(runingThreads + " threads is runing. With maximum threads " + threadNumber);
 		myExecutor2.shutdown();
 		try {
-			myExecutor2.awaitTermination(2, TimeUnit.HOURS);
+			myExecutor2.awaitTermination(2000, TimeUnit.HOURS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

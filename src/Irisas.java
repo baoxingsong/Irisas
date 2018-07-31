@@ -15,7 +15,7 @@ import me.songbx.action.EasyRun;
 public class Irisas {
 	public static void main(String[] argv) {
 		StringBuffer helpMessage=new StringBuffer("INDEL synchronization and Integrating effect GWAS pipeline\nE-mail:song@mpipz.mpg.de\n");
-		helpMessage.append("\nUsage:  java -jar iia.jar <command> [options]\n");
+		helpMessage.append("\nUsage:  java -jar Irisas.jar <command> [options]\n");
 		helpMessage.append("\nCommands:\n");
 		helpMessage.append("\n\n");
 

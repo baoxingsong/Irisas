@@ -1,13 +1,19 @@
 package OtherFunctions.PopulationStructure.Model;
 
-import java.util.HashMap;
+import me.songbx.action.parallel.model.SysHashMap;
 
 public class MarkerPostionS{
-	private HashMap<Integer, MarkerPostion> markerPostions = new HashMap<Integer, MarkerPostion>();
-	public synchronized HashMap<Integer, MarkerPostion> getMarkerPostions() {
+	private SysHashMap<Integer, MarkerPostion> markerPostions;
+	public MarkerPostionS(){
+		markerPostions = new SysHashMap<Integer, MarkerPostion>(); //1M markers on each chromosome
+	}
+	public MarkerPostionS(int initialSize){
+		markerPostions = new SysHashMap<Integer, MarkerPostion>(initialSize); //1M markers on each chromosome
+	}
+	public synchronized SysHashMap<Integer, MarkerPostion> getMarkerPostions() {
 		return markerPostions;
 	}
-	public synchronized void setMarkerPostions(HashMap<Integer, MarkerPostion> markerPostions) {
+	public synchronized void setMarkerPostions(SysHashMap<Integer, MarkerPostion> markerPostions) {
 		this.markerPostions = markerPostions;
 	}
 	public synchronized void put( Integer position, MarkerPostion markerPostion ){
