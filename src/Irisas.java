@@ -86,13 +86,3 @@ public class Irisas {
 		}
 	}
 }
-
-//
-//Manifest-Version: 1.0
-//Rsrc-Class-Path: ./ BigWig.jar commons-cli-1.2.jar commons-lang3-3.4.j
-// ar commons-math3-3.0.jar dom4j-1.6.1.jar hamcrest-core-1.1.0.jar jaco
-// coant.jar java-genomics-io.jar junit.jar log4j-1.2.15.jar sam-1.67.ja
-// r
-//Class-Path: .
-//Rsrc-Main-Class: Wmsa
-//Main-Class: org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader
