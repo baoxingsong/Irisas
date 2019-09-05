@@ -263,5 +263,6 @@ public class ReSDIFromMsaAAAVLinkversion {
 				}
 			}
 		}
+        refChromoSomeReadWithIndex.closeFile();
 	}
 }

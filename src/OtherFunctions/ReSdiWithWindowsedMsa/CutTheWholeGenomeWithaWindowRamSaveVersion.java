@@ -289,7 +289,9 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-
+				for ( String key : genomesMap.map.keySet() ) {
+					genomesMap.map.get(key).closeFile();
+				}
 				names2.clear();
 				genomesMap.clear();
 				sdisMap.clear();
@@ -326,7 +328,9 @@ public class CutTheWholeGenomeWithaWindowRamSaveVersion {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-
+		for ( String key : genomesMap.map.keySet() ) {
+			genomesMap.map.get(key).closeFile();
+		}
 		names2.clear();
 		genomesMap.clear();
 		sdisMap.clear();

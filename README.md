@@ -199,19 +199,9 @@ java -jar Irisas.jar GenerateLofPed
   -r   reference genome sequence in fasta format
 ````
 *ORF-state disturbed allele be encoded as 2 and ORF-state conserved allele encoded as 1.
-# About me
-I am a senior Ph.D student at MPIPZ (http://www.mpipz.mpg.de/). And I am working on INDEL variation.\
-Alternative alignment affects around 40% INDELs on average for each _Arabidopsis thaliana_ accession or _Drosophila_ Genetic Reference Panel (DGRP) line.
-After synchronizing genome-wide variants with this pipeline, a lot of population genetics analysis were observed. For GWAS analysis, as improved power was found with IOA. And for natural selection, we found there is statistics pattern difference after synchronization. With this idea, we also observed a special evolution path.
-\
-\
+
 **Irisas is designed and tested for inbreeding lines.**
 
-### TODO
-1) Adapt Irisas for out-breeding lines analysis
-2) ~~When adding new individuals, don't rerun the pipeline from very begin and assign each snp or INDEL a fixed ID~~
-3) The ORF-state is a really initial exploring, better measurement could be proposed.
-
-### Complementary implementation
-I have some complementary functions [implemented](https://github.com/baoxingsong/AnnotationLiftOver). They will be moved to Irisas after well testing.
+## Citation:
+Song B, Mott R, Gan X (2018) Recovery of novel association loci in Arabidopsis thaliana and Drosophila melanogaster through leveraging INDELs association and integrated burden test. PLoS Genet 14(10): e1007699. 
 

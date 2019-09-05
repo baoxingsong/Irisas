@@ -231,7 +231,7 @@ public class ReSDIFromMsaActionLinkVersion {
 		}
 		
 		public void run(){
-			ChromoSomeReadServiceWithIndex refChromoSomeRead = new ChromoSomeReadServiceWithIndex(referenceGenomePath);
+			ChromoSomeReadServiceWithIndex refChromoSomeRead = new ChromoSomeReadServiceWithIndex(referenceGenomePath); // the ChromoSomeReadServiceWithIndex class is not multiple threads safe, it is slower to make it as multiple threads safe
 			System.out.println(name + " begin");
 			ChromoSomeReadServiceWithIndex chromoSomeRead = new ChromoSomeReadServiceWithIndex(targetchromeSomeReadFileLocation);
 			HashMap<String, FirstLastList> sdiRecords = new HashMap<String, FirstLastList>();
@@ -901,6 +901,8 @@ public class ReSDIFromMsaActionLinkVersion {
 				}
 			}
 			//threadCount.countDown();
+			refChromoSomeRead.closeFile();
+			chromoSomeRead.closeFile();
 		}
 	}
 }
