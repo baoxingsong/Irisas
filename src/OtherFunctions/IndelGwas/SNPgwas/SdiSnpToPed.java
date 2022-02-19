@@ -33,6 +33,7 @@ public class SdiSnpToPed{
 	private String refName;
 	private String genomeFolder;
 	private String sdiLocation;
+	private int minimumCoverage = 2;
 
 	public SdiSnpToPed(){
 
@@ -52,6 +53,9 @@ public class SdiSnpToPed{
 	public synchronized void setSdiLocation(String sdiLocation) {
 		this.sdiLocation = sdiLocation;
 	}
+	public synchronized void setMinimumCoverage(int minimumCoverage) {
+		this.minimumCoverage = minimumCoverage;
+	}
 
 	public SdiSnpToPed(String [] argv ){
 		StringBuffer helpMessage=new StringBuffer("INDEL synchronization pipeline\nE-mail:song@mpipz.mpg.de\nArguments:\n");
@@ -60,6 +64,7 @@ public class SdiSnpToPed{
         helpMessage.append("  -r   name of reference accession/line\n");
         helpMessage.append("  -g   the folder where the genome sequences and bw files are located\n");
         helpMessage.append("  -s   the folder where sdi files are located\n");
+        helpMessage.append("  -d   the minimum coverage (Default 2)\n");
         
 		Options options = new Options();
         options.addOption("t",true,"threadnumber");
@@ -67,6 +72,7 @@ public class SdiSnpToPed{
         options.addOption("r",true,"refName");
         options.addOption("g",true,"genomeFolder");
         options.addOption("s",true,"sdiLocation");
+        options.addOption("d",true,"minimumCoverage");
         
         CommandLineParser parser = new PosixParser();
         CommandLine cmd=null;
@@ -107,6 +113,9 @@ public class SdiSnpToPed{
         	System.err.println("-s is missing. Please, check the parameters.");
         	System.err.println(helpMessage);
             System.exit(1);
+        }
+        if(cmd.hasOption("d")){
+        	minimumCoverage = Integer.parseInt(cmd.getOptionValue("d"));
         }
         doIt();
 	}
@@ -184,7 +193,7 @@ public class SdiSnpToPed{
         }
 		ExecutorService myExecutor = Executors.newFixedThreadPool(threadNumber);
 		for(String accessionName : accessionNames){
-			myExecutor.execute( new SdiSnpToPedMultipleThread( genomeFolder, accessionName, markerPostionAs, sdiLocation, pedOutPut, chrs));
+			myExecutor.execute( new SdiSnpToPedMultipleThread( genomeFolder, accessionName, markerPostionAs, sdiLocation, pedOutPut, chrs, minimumCoverage));
 		}
 		myExecutor.shutdown();
 		try {
@@ -240,15 +249,17 @@ class SdiSnpToPedMultipleThread extends Thread{
 	private String sdiLocation;
 	private SysOutPut pedOutPut;
 	private ArrayList<String> chrs;
+	private int minimumCoverage;
 	public SdiSnpToPedMultipleThread(String folderLocation, String accessionName,
                                      SysHashMap<String, ArrayList<MarkerPostion>> markerPostionAs,
-									 String sdiLocation, SysOutPut pedOutPut, ArrayList<String> chrs){
+									 String sdiLocation, SysOutPut pedOutPut, ArrayList<String> chrs, int minimumCoverage){
 		this.folderLocation = folderLocation;
 		this.accessionName = accessionName;
 		this.markerPostionAs = markerPostionAs;
 		this.sdiLocation = sdiLocation;
 		this.pedOutPut=pedOutPut;
 		this.chrs=chrs;
+		this.minimumCoverage=minimumCoverage;
 	}
 	
 	public void run( ){
@@ -271,7 +282,7 @@ class SdiSnpToPedMultipleThread extends Thread{
 							for (MapSingleRecord mapSingleRecord : mapSingleRecords) {
 								Contig result = wig.query(markerPostion.getChrName(), markerPostion.getPosition(), markerPostion.getPosition());
 								double thisMean = result.mean();
-								if (Double.isNaN(thisMean) || thisMean < 2) {
+								if (Double.isNaN(thisMean) || thisMean < minimumCoverage) {
                                     markerPostionHashMap.put(markerPostion, 'N'); // low coverage
 								} else {
 									if (mapSingleRecord.getBasement() == markerPostion.getPosition() && mapSingleRecord.getChanged() == 0 && mapSingleRecord.getOriginal().length() == 1 && !mapSingleRecord.getOriginal().contains("-") && mapSingleRecord.getResult().length() == 1) {
@@ -288,7 +299,7 @@ class SdiSnpToPedMultipleThread extends Thread{
 						} else { // this is added after generating public result begin
 							Contig result = wig.query(markerPostion.getChrName(), markerPostion.getPosition(), markerPostion.getPosition());
 							double thisMean = result.mean();
-							if (Double.isNaN(thisMean) || thisMean < 2) {
+							if (Double.isNaN(thisMean) || thisMean < minimumCoverage) {
                                 markerPostionHashMap.put(markerPostion, 'N'); // low coverage
 							}
 						}// this is added after generating public result end
